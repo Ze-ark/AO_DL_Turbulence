@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Editor and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Data exports and caches
+data/raw_matlab_exports/*
+data/processed/*
+!data/raw_matlab_exports/.gitkeep
+!data/processed/.gitkeep
+
+# Model weights and checkpoints
+checkpoints/*
+*.pt
+*.pth
+*.ckpt
+!checkpoints/.gitkeep
+
+# Experiment outputs
+outputs/*
+!outputs/.gitkeep
+
+# Logs
+*.log
+runs/
+wandb/
