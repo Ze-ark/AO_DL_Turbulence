@@ -19,8 +19,11 @@ Thumbs.db
 # Data exports and caches
 data/raw_matlab_exports/*
 data/processed/*
+data/real_validation/*
 !data/raw_matlab_exports/.gitkeep
 !data/processed/.gitkeep
+!data/real_validation/.gitkeep
+matlab/data/
 
 # Model weights and checkpoints
 checkpoints/*
@@ -37,3 +40,6 @@ outputs/*
 *.log
 runs/
 wandb/
+
+# Local wheel download cache
+wheels/

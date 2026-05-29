@@ -1,0 +1,9 @@
+pytest
+numpy
+h5py
+pyyaml
+matplotlib
+tqdm
+scikit-image
+torch
+torchvision
