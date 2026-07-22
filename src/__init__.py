@@ -1,1 +1,1 @@
-"""AO-DL turbulence compensation package."""
+"""AO-DL 湍流补偿核心包。"""

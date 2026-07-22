@@ -1,3 +1,5 @@
+"""训练 AO-DL 相位补偿模型并保存最佳检查点。"""
+
 from __future__ import annotations
 
 import argparse
@@ -9,6 +11,7 @@ import torch
 from torch.utils.data import DataLoader
 import yaml
 
+# 将项目根目录加入模块搜索路径，确保直接运行本脚本时也能导入 src 包。
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -20,17 +23,21 @@ from src.runtime import resolve_device
 
 
 def train(config_path: str | Path) -> Path:
+    """根据配置训练相位补偿网络，并返回最佳模型检查点路径。"""
+    # 读取配置并确定训练设备与模拟数据集路径。
     config_path = _resolve_project_path(config_path)
     config = _load_config(config_path)
     device = resolve_device(config["runtime"].get("device", "cpu"))
     h5_path = _resolve_project_path(config["data"].get("simulated_h5_path", config["data"].get("h5_path")))
     dataset = HoloH5Dataset(h5_path)
+    # 使用固定随机种子划分训练、验证和测试索引，保证结果可复现。
     splits = split_indices(
         len(dataset),
         train_fraction=config["data"].get("train_fraction", 0.8),
         val_fraction=config["data"].get("val_fraction", 0.0),
         seed=config["data"].get("seed", 42),
     )
+    # 训练集启用随机打乱；测试集保持固定顺序以便稳定评估。
     train_loader = DataLoader(
         HoloH5Dataset(h5_path, indices=splits["train"]),
         batch_size=config["train"].get("batch_size", 4),
@@ -42,6 +49,7 @@ def train(config_path: str | Path) -> Path:
         shuffle=False,
     )
 
+    # 初始化相位预测网络及 AdamW 优化器。
     model = ResUNetPhase(base_channels=config["model"].get("base_channels", 32)).to(device)
     optimizer = torch.optim.AdamW(
         model.parameters(),
@@ -49,6 +57,7 @@ def train(config_path: str | Path) -> Path:
         weight_decay=config["train"].get("weight_decay", 1e-4),
     )
 
+    # 创建日志与检查点目录，并记录当前最优测试损失。
     output_dir = _resolve_project_path(config["train"].get("output_dir", "outputs/train_sim_gaussian_v1"))
     checkpoint_dir = _resolve_project_path(config["train"].get("checkpoint_dir", "checkpoints"))
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -61,9 +70,11 @@ def train(config_path: str | Path) -> Path:
         writer = csv.writer(f)
         writer.writerow(["epoch", "train_total", "test_total"])
         for epoch in range(1, config["train"].get("epochs", 2) + 1):
+            # 训练阶段更新参数，测试阶段关闭梯度并仅计算损失。
             train_loss = _run_epoch(model, train_loader, device, optimizer)
             test_loss = _run_epoch(model, test_loader, device, optimizer=None)
             writer.writerow([epoch, train_loss, test_loss])
+            # 仅保存测试损失最低的模型，避免后续较差轮次覆盖最佳权重。
             if test_loss < best_val:
                 best_val = test_loss
                 torch.save({"model": model.state_dict(), "config": config, "epoch": epoch}, best_path)
@@ -78,13 +89,17 @@ def _run_epoch(
     device: torch.device,
     optimizer: torch.optim.Optimizer | None,
 ) -> float:
+    """运行一个训练或评估轮次，并返回按样本数加权的平均损失。"""
+    # 是否传入优化器决定当前处于训练模式还是评估模式。
     training = optimizer is not None
     model.train(training)
     total = 0.0
     count = 0
     for batch in loader:
+        # 将批次中的张量移动到目标设备，非张量元数据保持不变。
         batch = _move_batch(batch, device)
         with torch.set_grad_enabled(training):
+            # 网络预测校正相位，再结合输入场与目标场计算补偿损失。
             phi_corr = model(batch["input"])
             losses = compensation_loss(
                 phi_corr=phi_corr,
@@ -94,9 +109,11 @@ def _run_epoch(
                 target_phase=batch["target_phase"],
             )
             if training:
+                # 清空旧梯度，反向传播总损失并更新模型参数。
                 optimizer.zero_grad(set_to_none=True)
                 losses["total"].backward()
                 optimizer.step()
+        # 按批次样本数累计损失，以兼容最后一个不足整批的批次。
         batch_size = int(batch["input"].shape[0])
         total += float(losses["total"].detach().cpu().item()) * batch_size
         count += batch_size
@@ -104,6 +121,7 @@ def _run_epoch(
 
 
 def _move_batch(batch: dict, device: torch.device) -> dict:
+    """将批次字典中的所有张量移动到指定计算设备。"""
     return {
         key: value.to(device) if isinstance(value, torch.Tensor) else value
         for key, value in batch.items()
@@ -111,16 +129,19 @@ def _move_batch(batch: dict, device: torch.device) -> dict:
 
 
 def _load_config(path: str | Path) -> dict:
+    """从 YAML 文件加载训练配置。"""
     with Path(path).open("r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
 def _resolve_project_path(path: str | Path) -> Path:
+    """将相对路径解析为相对于项目根目录的绝对路径。"""
     path = Path(path)
     return path if path.is_absolute() else PROJECT_ROOT / path
 
 
 def main() -> None:
+    """解析命令行参数并启动训练。"""
     parser = argparse.ArgumentParser(description="Train AO-DL phase compensation.")
     parser.add_argument("--config", default="configs/sim_gaussian_v1.yaml")
     args = parser.parse_args()

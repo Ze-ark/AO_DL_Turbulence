@@ -1,3 +1,5 @@
+"""相位补偿损失函数和评估指标测试。"""
+
 import torch
 
 from src.evaluate_compensation import compute_batch_metrics
@@ -5,6 +7,7 @@ from src.losses import compensation_loss, compensate_field, complex_field_from_i
 
 
 def test_compensate_field_recovers_clean_phase_when_correction_matches_turbulence():
+    """验证校正相位等于湍流相位时可恢复单位实光场。"""
     intensity = torch.ones(1, 1, 4, 4)
     phase_turb = torch.full((1, 1, 4, 4), 0.75)
     phase_corr = torch.full((1, 1, 4, 4), 0.75)
@@ -16,6 +19,7 @@ def test_compensate_field_recovers_clean_phase_when_correction_matches_turbulenc
 
 
 def test_compensation_loss_is_lower_for_correct_phase_correction():
+    """验证正确相位校正对应的总损失低于未校正结果。"""
     intensity = torch.ones(1, 1, 4, 4)
     phase_turb = torch.full((1, 1, 4, 4), 0.5)
     target_intensity = torch.ones(1, 1, 4, 4)
@@ -40,6 +44,7 @@ def test_compensation_loss_is_lower_for_correct_phase_correction():
 
 
 def test_compute_batch_metrics_reports_perfect_recovery():
+    """验证完全一致的复光场产生理想评估指标。"""
     intensity = torch.ones(1, 1, 8, 8)
     phase = torch.zeros(1, 1, 8, 8)
     real, imag = complex_field_from_intensity_phase(intensity, phase)

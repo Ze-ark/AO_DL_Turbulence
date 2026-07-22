@@ -1,3 +1,5 @@
+"""使用已训练模型验证真实实验复光场数据。"""
+
 from __future__ import annotations
 
 import argparse
@@ -8,12 +10,14 @@ import sys
 
 import matplotlib
 
+# 使用无界面绘图后端，适配服务器执行环境。
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import DataLoader
 import yaml
 
+# 支持将本文件作为独立脚本直接执行。
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -24,6 +28,7 @@ from src.runtime import resolve_device
 
 
 def validate_real_experiment(config_path: str | Path) -> Path:
+    """在真实无标签数据上推理，并返回分温度统计表路径。"""
     config_path = _resolve_project_path(config_path)
     config = _load_config(config_path)
     validation_config = config["validation"]
@@ -36,6 +41,7 @@ def validate_real_experiment(config_path: str | Path) -> Path:
         num_workers=0,
     )
 
+    # 模型结构必须与训练检查点中的结构参数保持一致。
     model = ResUNetPhase(
         in_channels=2,
         base_channels=config["model"].get("base_channels", 32),
@@ -47,9 +53,11 @@ def validate_real_experiment(config_path: str | Path) -> Path:
 
     output_dir = _resolve_project_path(validation_config.get("output_dir", "outputs/real_validation_2x"))
     output_dir.mkdir(parents=True, exist_ok=True)
+    # 按温度分组保存逐帧指标，最后统一计算统计量。
     summary_rows: dict[int, list[dict[str, float]]] = defaultdict(list)
     first_batch_saved = False
 
+    # 真实验证仅执行前向推理，不构建梯度图。
     with torch.no_grad():
         for batch in loader:
             inputs = batch["input"].to(device)
@@ -60,6 +68,7 @@ def validate_real_experiment(config_path: str | Path) -> Path:
             for i, row in enumerate(batch_rows):
                 temperature = int(temperatures[i].item() if isinstance(temperatures, torch.Tensor) else temperatures[i])
                 summary_rows[temperature].append(row)
+            # 示例图只保存一次，控制输出文件数量。
             if not first_batch_saved:
                 _save_real_examples(output_dir / "real_validation_examples.png", batch, phi_corr)
                 first_batch_saved = True
@@ -70,6 +79,7 @@ def validate_real_experiment(config_path: str | Path) -> Path:
 
 
 def _batch_real_metrics(intensity: torch.Tensor, phi_corr: torch.Tensor) -> list[dict[str, float]]:
+    """计算每帧能量、峰值、质心位置及预测相位统计量。"""
     _, _, h, w = intensity.shape
     y = torch.arange(h, device=intensity.device, dtype=intensity.dtype).view(1, 1, h, 1)
     x = torch.arange(w, device=intensity.device, dtype=intensity.dtype).view(1, 1, 1, w)
@@ -96,6 +106,7 @@ def _batch_real_metrics(intensity: torch.Tensor, phi_corr: torch.Tensor) -> list
 
 
 def _write_summary(path: Path, rows_by_temperature: dict[int, list[dict[str, float]]]) -> None:
+    """按温度汇总逐帧指标并写入 CSV。"""
     fields = [
         "temperature",
         "frame_count",
@@ -114,6 +125,7 @@ def _write_summary(path: Path, rows_by_temperature: dict[int, list[dict[str, flo
             rows = rows_by_temperature[temperature]
             centroid_x = [row["centroid_x"] for row in rows]
             centroid_y = [row["centroid_y"] for row in rows]
+            # 横纵质心方差之和作为光斑漂移指标 rc2。
             centroid_x_var = _variance(centroid_x)
             centroid_y_var = _variance(centroid_y)
             writer.writerow(
@@ -132,6 +144,7 @@ def _write_summary(path: Path, rows_by_temperature: dict[int, list[dict[str, flo
 
 
 def _save_real_examples(path: Path, batch: dict, phi_corr: torch.Tensor) -> None:
+    """保存最多四帧真实光强与预测校正相位的对照图。"""
     count = min(4, int(phi_corr.shape[0]))
     fig, axes = plt.subplots(count, 2, figsize=(7, 3 * count), constrained_layout=True)
     if count == 1:
@@ -152,11 +165,13 @@ def _save_real_examples(path: Path, batch: dict, phi_corr: torch.Tensor) -> None
 
 
 def _mean(values) -> float:
+    """计算可迭代对象的算术平均值，空输入返回零。"""
     values = list(values)
     return float(sum(values) / max(len(values), 1))
 
 
 def _variance(values: list[float]) -> float:
+    """计算样本方差；样本不足两个时返回零。"""
     if len(values) < 2:
         return 0.0
     mean = _mean(values)
@@ -164,16 +179,19 @@ def _variance(values: list[float]) -> float:
 
 
 def _load_config(path: str | Path) -> dict:
+    """读取 YAML 验证配置。"""
     with Path(path).open("r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
 def _resolve_project_path(path: str | Path) -> Path:
+    """将相对路径转换为基于项目根目录的绝对路径。"""
     path = Path(path)
     return path if path.is_absolute() else PROJECT_ROOT / path
 
 
 def main() -> None:
+    """解析命令行参数并启动真实实验验证。"""
     parser = argparse.ArgumentParser(description="Validate AO-DL checkpoint on real 2x complex-field HDF5 data.")
     parser.add_argument("--config", default="configs/sim_gaussian_v1.yaml")
     args = parser.parse_args()

@@ -1,3 +1,5 @@
+"""真实实验 HDF5 数据集读取测试。"""
+
 import h5py
 import numpy as np
 
@@ -5,6 +7,8 @@ from src.dataset_holo import RealComplexH5Dataset
 
 
 def test_real_complex_h5_dataset_reads_unlabeled_complex_fields(tmp_path):
+    """验证末维帧布局及无标签复光场元数据能够正确读取。"""
+    # 构造 MATLAB 常见的 H×W×N 帧布局。
     h5_path = tmp_path / "real_validation.h5"
     n, h, w = 3, 8, 6
     with h5py.File(h5_path, "w") as f:

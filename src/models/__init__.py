@@ -1,1 +1,1 @@
-"""Model definitions for AO-DL turbulence compensation."""
+"""AO-DL 湍流补偿模型定义。"""

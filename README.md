@@ -61,6 +61,13 @@ Train and evaluate:
 .\.venv\Scripts\python.exe -m src.validate_real_experiment --config configs/sim_gaussian_v1.yaml
 ```
 
+Detailed Chinese experiment notes are in:
+
+- `docs/项目总览.md`
+- `docs/数据格式.md`
+- `docs/MATLAB导出流程.md`
+- `docs/训练与评估流程.md`
+
 Run tests:
 
 ```powershell
