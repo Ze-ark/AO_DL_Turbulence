@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 import torch
 
-from src.dataset_holo import HoloH5Dataset, split_indices
+from src.dataset_holo import HoloH5Dataset, split_grouped_indices, split_indices
 
 
 def _write_sample_h5(path, n=4, h=8, w=8):
@@ -48,6 +48,22 @@ def test_split_indices_is_deterministic_and_covers_dataset():
     assert len(split_a["val"]) == 2
     assert len(split_a["test"]) == 2
     assert sorted(split_a["train"] + split_a["val"] + split_a["test"]) == list(range(10))
+
+
+def test_grouped_split_keeps_complete_scenes_isolated():
+    """验证同一场景的所有时间帧只会进入一个集合。"""
+    scene_ids = np.repeat(np.arange(10), 3)
+
+    splits = split_grouped_indices(scene_ids, train_fraction=0.6, val_fraction=0.2, seed=7)
+    scene_sets = {
+        name: set(scene_ids[indices].tolist())
+        for name, indices in splits.items()
+    }
+
+    assert scene_sets["train"].isdisjoint(scene_sets["val"])
+    assert scene_sets["train"].isdisjoint(scene_sets["test"])
+    assert scene_sets["val"].isdisjoint(scene_sets["test"])
+    assert sorted(splits["train"] + splits["val"] + splits["test"]) == list(range(30))
 
 
 def test_holo_h5_dataset_reads_matlab_frame_last_and_row_meta(tmp_path):

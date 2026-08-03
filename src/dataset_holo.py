@@ -52,8 +52,15 @@ class HoloH5Dataset(Dataset):
             target_intensity = _read_frame(f, "target/intensity_clean", index, self._frame_axis_last)
             target_phase = _read_frame(f, "target/phase_clean", index, self._frame_axis_last)
             frame_id = _read_meta_scalar(f, "meta/frame_id", index, default=index)
+            scene_id = _read_meta_scalar(f, "meta/scene_id", index, default=index)
+            random_seed = _read_meta_scalar(f, "meta/random_seed", index, default=-1)
             turbulence_strength = _read_meta_scalar(f, "meta/turbulence_strength", index, default=np.nan)
-            r0 = _read_meta_scalar(f, "meta/r0_or_equivalent", index, default=np.nan)
+            r0 = _read_meta_scalar(
+                f,
+                "meta/r0",
+                index,
+                default=_read_meta_scalar(f, "meta/r0_or_equivalent", index, default=np.nan),
+            )
 
         # 输入第一通道为归一化光强，第二通道为包裹到 [-π, π] 的相位。
         _validate_arrays(intensity, phase, target_intensity, target_phase)
@@ -68,7 +75,10 @@ class HoloH5Dataset(Dataset):
             "target_phase": torch.from_numpy(_wrap_phase(target_phase)[None, ...]),
             "meta": {
                 "frame_id": int(frame_id),
+                "scene_id": int(scene_id),
+                "random_seed": int(random_seed),
                 "turbulence_strength": float(turbulence_strength),
+                "r0": float(r0),
                 "r0_or_equivalent": float(r0),
             },
         }
@@ -150,6 +160,39 @@ def split_indices(
         "train": indices[:train_end],
         "val": indices[train_end:val_end],
         "test": indices[val_end:],
+    }
+
+
+def split_grouped_indices(
+    group_ids: list[int] | np.ndarray,
+    train_fraction: float = 0.8,
+    val_fraction: float = 0.1,
+    seed: int = 42,
+) -> dict[str, list[int]]:
+    """按完整场景或回合分组划分，避免相邻帧跨集合泄漏。"""
+    groups = np.asarray(group_ids).reshape(-1)
+    if groups.size == 0:
+        raise ValueError("group_ids must not be empty")
+    if not 0 < train_fraction < 1:
+        raise ValueError("train_fraction must be between 0 and 1")
+    if not 0 <= val_fraction < 1:
+        raise ValueError("val_fraction must be between 0 and 1")
+    if train_fraction + val_fraction >= 1:
+        raise ValueError("train_fraction + val_fraction must be less than 1")
+
+    unique_groups = np.unique(groups)
+    rng = np.random.default_rng(seed)
+    shuffled_groups = rng.permutation(unique_groups)
+    train_end = int(round(len(unique_groups) * train_fraction))
+    val_end = train_end + int(round(len(unique_groups) * val_fraction))
+    assigned_groups = {
+        "train": shuffled_groups[:train_end],
+        "val": shuffled_groups[train_end:val_end],
+        "test": shuffled_groups[val_end:],
+    }
+    return {
+        split: np.flatnonzero(np.isin(groups, selected)).tolist()
+        for split, selected in assigned_groups.items()
     }
 
 

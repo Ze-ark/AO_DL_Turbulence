@@ -1,0 +1,57 @@
+metadata:
+  stage: S2
+  purpose: traditional_modal_controller_pilot
+  scientific_gate: s2_in_progress_resunet_adapter_pending
+  allow_scientific_claims: false
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+
+evaluation:
+  # 每个基础种子会产生 environment.batch_size 个独立完整回合。
+  development_seeds: [1000, 2000]
+  # 冒烟种子与开发、封存测试完全隔离，防止快速检查提前打开测试轨迹。
+  smoke_development_seed: 900000
+  smoke_test_seed: 910000
+  # 这组已用于第一轮传统控制先导，不再作为新增ResUNet后的最终封存集。
+  pilot_test_seeds: [30000, 40000]
+  # 只有动态ResUNet和全部控制器冻结后才允许打开。
+  final_sealed_test_seeds: [50000, 60000]
+  steps: 200
+  primary_metric: power_in_bucket
+
+tuning:
+  leaky_integrator:
+    gains: [0.15, 0.25, 0.35, 0.5]
+    leaks: [0.0, 0.02, 0.05, 0.1]
+  linear_predictor:
+    # prediction_horizon 自动使用 SLM 的帧延迟。
+    velocity_gains: [0.0, 0.5, 1.0, 1.5]
+
+resunet_transfer:
+  checkpoint: checkpoints/sim_gaussian_v1_best.pt
+  development_seeds: [1000, 2000]
+  steps: 200
+  min_mean_modal_cosine: 0.8
+  max_relative_modal_rmse: 0.5
+
+resunet_dynamic:
+  train_base_seeds: [110000, 120000]
+  validation_base_seeds: [130000]
+  perception_test_base_seeds: [140000]
+  frames_per_episode: 50
+  random_action_std_rad: 0.05
+  base_channels: 32
+  epochs: 15
+  batch_size: 32
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  modal_loss_weight: 1.0
+  min_test_modal_cosine: 0.9
+  max_test_relative_modal_rmse: 0.35
+  checkpoint: checkpoints/s2_dynamic_resunet_best.pt
+  dataset_h5: data/processed/s2_dynamic_resunet_v1.h5
+  output_directory: outputs/s2_dynamic_resunet_v1
+
+outputs:
+  directory: outputs/s2_baselines_v1
+  export_test_trajectories: true

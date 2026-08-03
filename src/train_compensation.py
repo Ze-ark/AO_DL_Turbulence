@@ -20,6 +20,7 @@ from src.dataset_holo import HoloH5Dataset, split_indices
 from src.losses import compensation_loss
 from src.models.resunet_phase import ResUNetPhase
 from src.runtime import resolve_device
+from src.training_progress import progress_bar, progress_message, update_progress
 
 
 def train(config_path: str | Path) -> Path:
@@ -65,20 +66,57 @@ def train(config_path: str | Path) -> Path:
     history_path = output_dir / "loss_history.csv"
     best_path = checkpoint_dir / "sim_gaussian_v1_best.pt"
     best_val = float("inf")
+    total_epochs = int(config["train"].get("epochs", 2))
+    progress_message(
+        f"训练设备：{torch.cuda.get_device_name(device)}；"
+        f"轮数：{total_epochs}；批大小：{config['train'].get('batch_size', 4)}"
+    )
 
     with history_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["epoch", "train_total", "test_total"])
-        for epoch in range(1, config["train"].get("epochs", 2) + 1):
+        epochs = progress_bar(
+            range(1, total_epochs + 1),
+            description="模型训练总进度",
+            unit="轮",
+        )
+        for epoch in epochs:
             # 训练阶段更新参数，测试阶段关闭梯度并仅计算损失。
-            train_loss = _run_epoch(model, train_loader, device, optimizer)
-            test_loss = _run_epoch(model, test_loader, device, optimizer=None)
+            train_loss = _run_epoch(
+                model,
+                train_loader,
+                device,
+                optimizer,
+                epoch=epoch,
+                total_epochs=total_epochs,
+                stage="训练",
+            )
+            test_loss = _run_epoch(
+                model,
+                test_loader,
+                device,
+                optimizer=None,
+                epoch=epoch,
+                total_epochs=total_epochs,
+                stage="测试",
+            )
             writer.writerow([epoch, train_loss, test_loss])
+            f.flush()
             # 仅保存测试损失最低的模型，避免后续较差轮次覆盖最佳权重。
             if test_loss < best_val:
                 best_val = test_loss
                 torch.save({"model": model.state_dict(), "config": config, "epoch": epoch}, best_path)
-            print(f"epoch={epoch} train_total={train_loss:.6f} test_total={test_loss:.6f}")
+                progress_message(
+                    f"第 {epoch}/{total_epochs} 轮保存新的最佳权重：测试损失={best_val:.6f}"
+                )
+            update_progress(
+                epochs,
+                device=device,
+                metrics={"训练损失": train_loss, "测试损失": test_loss, "最佳损失": best_val},
+            )
+            progress_message(
+                f"epoch={epoch} train_total={train_loss:.6f} test_total={test_loss:.6f}"
+            )
 
     return best_path
 
@@ -88,6 +126,10 @@ def _run_epoch(
     loader: DataLoader,
     device: torch.device,
     optimizer: torch.optim.Optimizer | None,
+    *,
+    epoch: int,
+    total_epochs: int,
+    stage: str,
 ) -> float:
     """运行一个训练或评估轮次，并返回按样本数加权的平均损失。"""
     # 是否传入优化器决定当前处于训练模式还是评估模式。
@@ -95,7 +137,13 @@ def _run_epoch(
     model.train(training)
     total = 0.0
     count = 0
-    for batch in loader:
+    batches = progress_bar(
+        loader,
+        description=f"{stage} {epoch}/{total_epochs}",
+        unit="批",
+        leave=False,
+    )
+    for batch in batches:
         # 将批次中的张量移动到目标设备，非张量元数据保持不变。
         batch = _move_batch(batch, device)
         with torch.set_grad_enabled(training):
@@ -117,6 +165,11 @@ def _run_epoch(
         batch_size = int(batch["input"].shape[0])
         total += float(losses["total"].detach().cpu().item()) * batch_size
         count += batch_size
+        update_progress(
+            batches,
+            device=device,
+            metrics={"平均损失": total / count},
+        )
     return total / max(count, 1)
 
 

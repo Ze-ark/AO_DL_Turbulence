@@ -1,0 +1,142 @@
+# Material Passport
+# Origin Skill: academic-research-suite / experiment-agent
+# Origin Mode: plan
+# Origin Date: 2026-07-24T19:36:37+08:00
+# Verification Status: UNVERIFIED
+# Version Label: hardware_inventory_template_v1
+#
+# 使用方法：
+# 1. 复制本文件为 data/hardware_calibration/hardware_inventory.yaml。
+# 2. 把所有 TBD 改成设备铭牌、说明书或实测值。
+# 3. 不确定时保留 TBD，不要猜。
+
+schema_version: 1
+
+material_passport:
+  origin_skill: academic-research-suite / experiment-agent
+  origin_mode: plan
+  origin_date: "2026-07-24T19:36:37+08:00"
+  verification_status: UNVERIFIED
+  version_label: hardware_inventory_template_v1
+
+experiment:
+  experiment_id: TBD
+  operator: TBD
+  laboratory: TBD
+  inventory_date: TBD
+  intended_wavelength_nm: TBD
+
+slms:
+  slm_a:
+    role: disturbance
+    manufacturer: 西安中科微星
+    model: FSLM-2K73-P04
+    serial_number: TBD
+    actual_gray_bit_depth: TBD
+    firmware_version: TBD
+    vendor_correction_file: TBD
+    hdmi_display_index: TBD
+    phase_lut_file: TBD
+    measured_settling_time_ms: TBD
+    vendor_declared:
+      source_url: https://www.casmicrostar.com/h-pd-205.html
+      source_checked_date: 2026-07-24
+      modulation_type: phase
+      optical_layout: reflective
+      resolution_px: [2048, 2048]
+      pixel_pitch_um: 6.4
+      active_area_mm: [13.1, 13.1]
+      nominal_refresh_hz: 60
+      phase_range: ">= 2pi at 1550 nm"
+
+  slm_b:
+    role: correction
+    manufacturer: 西安中科微星
+    model: FSLM-2K73-P04
+    serial_number: TBD
+    actual_gray_bit_depth: TBD
+    firmware_version: TBD
+    vendor_correction_file: TBD
+    hdmi_display_index: TBD
+    phase_lut_file: TBD
+    measured_settling_time_ms: TBD
+    vendor_declared:
+      source_url: https://www.casmicrostar.com/h-pd-205.html
+      source_checked_date: 2026-07-24
+      modulation_type: phase
+      optical_layout: reflective
+      resolution_px: [2048, 2048]
+      pixel_pitch_um: 6.4
+      active_area_mm: [13.1, 13.1]
+      nominal_refresh_hz: 60
+      phase_range: ">= 2pi at 1550 nm"
+
+laser:
+  manufacturer: TBD
+  model: TBD
+  serial_number: TBD
+  wavelength_nm: TBD
+  maximum_output_power_mw: TBD
+  planned_operating_power_mw: TBD
+  beam_diameter_at_slm_mm: TBD
+  polarization: TBD
+  power_control_method: TBD
+
+camera:
+  manufacturer: TBD
+  model: TBD
+  serial_number: TBD
+  sensor_wavelength_range_nm: TBD
+  maximum_frame_rate_hz: TBD
+  exposure_time_us: TBD
+  interface: TBD
+  trigger_mode: TBD
+  bit_depth: TBD
+
+power_meter:
+  controller_manufacturer: TBD
+  controller_model: TBD
+  sensor_head_manufacturer: TBD
+  sensor_head_model: TBD
+  sensor_wavelength_range_nm: TBD
+  measurement_range: TBD
+  sampling_rate_hz: TBD
+  computer_interface: TBD
+
+focus_metric_branch:
+  focusing_lens_model: TBD
+  focusing_lens_focal_length_mm: TBD
+  selection_element_type: TBD  # pinhole、single_mode_fiber 或 iris
+  selection_element_size_or_na: TBD
+  whole_beam_total_power_is_primary_metric: false
+
+display_path:
+  operating_system: Windows
+  scaling_percent: 100
+  hdr_disabled: TBD
+  color_enhancement_disabled: TBD
+  interpolation_disabled: TBD
+  slm_a_independent_output_confirmed: TBD
+  slm_b_independent_output_confirmed: TBD
+
+calibration_files:
+  slm_a_to_slm_b_registration: TBD
+  slm_b_to_camera_registration: TBD
+  flat_reference_field: TBD
+  power_meter_dark_record: TBD
+
+safety:
+  wavelength_matched_eye_protection_confirmed: TBD
+  beam_enclosure_confirmed: TBD
+  unused_reflections_terminated: TBD
+  laboratory_sop_completed: TBD
+  local_safety_approval_reference: TBD
+
+h0_gate:
+  device_identity_complete: TBD
+  independent_hdmi_outputs_passed: TBD
+  correction_files_bound_to_serials: TBD
+  detector_wavelength_compatibility_passed: TBD
+  focus_selection_branch_available: TBD
+  laser_safety_check_passed: TBD
+  overall_result: TBD  # PASS 或 FAIL

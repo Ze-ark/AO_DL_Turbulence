@@ -20,6 +20,7 @@ Thumbs.db
 data/raw_matlab_exports/*
 data/processed/*
 data/real_validation/*
+data/hardware_calibration/*
 !data/raw_matlab_exports/.gitkeep
 !data/processed/.gitkeep
 !data/real_validation/.gitkeep

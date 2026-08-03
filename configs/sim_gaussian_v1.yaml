@@ -1,5 +1,16 @@
+metadata:
+  # S0 物理单元测试已通过；本配置仍只用于静态接口和基线检查。
+  purpose: s0_static_physics_validation
+
+  # 传播、相位屏、接收面参考、动作敏感性和约束测试已通过。
+  # 动态 RL 回合尚未建立，所以不能把静态数据当作 RL 结果。
+  scientific_gate: s0_physics_passed_dynamic_pending
+
+  # 使用本配置产生的结果不能作为正式 AO、RL 或论文性能结论。
+  allow_scientific_claims: false
+
 data:
-  # 仿真 HDF5 数据文件；用于有标签的训练集和测试集。
+  # 旧静态仿真 HDF5；仅用于软件冒烟和静态基线开发。
   simulated_h5_path: data/raw_matlab_exports/sim_gaussian_v1.h5
 
   # 训练集比例；剩余仿真样本自动作为测试集。

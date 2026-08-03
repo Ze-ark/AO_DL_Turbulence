@@ -1,0 +1,47 @@
+metadata:
+  stage: S1
+  purpose: taylor_frozen_flow_dynamic_environment
+  scientific_gate: s1_core_verified_baselines_pending
+  allow_scientific_claims: false
+
+environment:
+  grid_size: 64
+  # 内部湍流屏为 256×256，中央 64×64 才是观测窗口，避免回合内周期重放。
+  turbulence_grid_multiplier: 4
+  screen_size_m: 0.4
+  wavelength_m: 1.55e-6
+  pupil_radius_fraction: 0.4
+  r0_m: 0.12
+  outer_scale_m: 10.0
+  inner_scale_m: 0.01
+
+  # 一帧代表 10 ms；0.5 m/s 时每帧移动约 0.8 个像素。
+  dt_s: 0.01
+  episode_length: 200
+  wind_speed_mps: 0.5
+  wind_direction_deg: 30.0
+
+  # 1.0 是严格泰勒冻结流；后续实验再降低它，加入湍流形变。
+  frozen_flow_rho: 1.0
+
+  # S1 暂时只控制十个低阶模态，不直接输出 2048×2048 SLM 像素。
+  num_modes: 10
+  modal_limit_rad: 3.0
+
+  # 这些是安全的仿真假设，不是 FSLM-2K73-P04 实测参数。
+  slm_phase_min_rad: -3.141592653589793
+  slm_phase_max_rad: 3.141592653589793
+  slm_max_delta_rad: 0.35
+  slm_quantization_levels: 256
+  slm_delay_frames: 1
+
+  bucket_radius_pixels: 2.0
+  reward_phase_weight: 0.05
+  reward_action_weight: 0.01
+  reward_violation_weight: 0.5
+  batch_size: 32
+  seed: 42
+
+runtime:
+  # S1 正式环境强制在 CUDA 上运行，不静默回退到 CPU。
+  device: cuda
