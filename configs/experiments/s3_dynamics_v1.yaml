@@ -1,0 +1,68 @@
+metadata:
+  stage: S3
+  purpose: nonlinear_temporal_dynamics_gate_before_rl
+  scientific_gate: s3_waiting_for_user_training
+  allow_scientific_claims: false
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+
+dataset:
+  # 用最近8帧低阶湍流模态预测下一帧；每帧间隔10 ms。
+  sequence_length: 8
+  frames_per_episode: 160
+  random_action_std_rad: 0.05
+
+  # 每项基础种子会由环境批量生成32个完整回合。训练、验证和封存测试
+  # 的条件、种子均不重叠。封存条件不会被训练脚本读取。
+  train_conditions:
+    - {id: train_s035_d000, wind_speed_mps: 0.35, wind_direction_deg: 0.0, base_seed: 210000}
+    - {id: train_s035_d045, wind_speed_mps: 0.35, wind_direction_deg: 45.0, base_seed: 211000}
+    - {id: train_s050_d015, wind_speed_mps: 0.50, wind_direction_deg: 15.0, base_seed: 212000}
+    - {id: train_s050_d060, wind_speed_mps: 0.50, wind_direction_deg: 60.0, base_seed: 213000}
+    - {id: train_s065_d000, wind_speed_mps: 0.65, wind_direction_deg: 0.0, base_seed: 214000}
+    - {id: train_s065_d045, wind_speed_mps: 0.65, wind_direction_deg: 45.0, base_seed: 215000}
+
+  validation_conditions:
+    - {id: val_s040_d030, wind_speed_mps: 0.40, wind_direction_deg: 30.0, base_seed: 310000}
+    - {id: val_s055_d075, wind_speed_mps: 0.55, wind_direction_deg: 75.0, base_seed: 311000}
+    - {id: val_s060_d020, wind_speed_mps: 0.60, wind_direction_deg: 20.0, base_seed: 312000}
+
+  # 只有训练完成、验证门槛通过且模型冻结后才允许独立评估脚本打开。
+  sealed_test_conditions:
+    - {id: test_s0425_d010, wind_speed_mps: 0.425, wind_direction_deg: 10.0, base_seed: 410000}
+    - {id: test_s0575_d050, wind_speed_mps: 0.575, wind_direction_deg: 50.0, base_seed: 411000}
+    - {id: test_s0625_d080, wind_speed_mps: 0.625, wind_direction_deg: 80.0, base_seed: 412000}
+
+model:
+  kind: gru_modal_dynamics
+  hidden_size: 128
+  num_layers: 2
+  dropout: 0.10
+
+training:
+  epochs: 30
+  batch_size: 256
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+  seed: 20260803
+
+baseline:
+  # 主要线性基线与GRU使用完全相同的8帧历史和训练样本。
+  kind: ridge_autoregression_same_history
+  ridge_alpha: 0.001
+  # S2恒速预测器只作为辅助参照，不作为S3非线性门槛的主要对手。
+  secondary_velocity_gain: 1.0
+
+gate:
+  primary_metric: paired_episode_skill_score
+  # skill = 1 - GRU_MSE / 同历史线性岭回归MSE；0.05表示平均误差平方至少降低5%。
+  min_mean_skill_score: 0.05
+  min_ci95_low: 0.0
+  require_every_condition_positive: true
+
+outputs:
+  train_validation_h5: data/processed/s3_dynamics_train_validation_v1.h5
+  checkpoint: checkpoints/s3_gru_dynamics_best.pt
+  training_directory: outputs/s3_dynamics_v1/training
+  sealed_test_directory: outputs/s3_dynamics_v1/sealed_test

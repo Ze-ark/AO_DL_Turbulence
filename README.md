@@ -28,7 +28,12 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-Generate a small MATLAB smoke-test dataset:
+Run the S0 MATLAB physics tests, then generate a small static validation dataset:
+
+```matlab
+results = runtests('matlab/tests/AoS0PhysicsTest.m');
+assertSuccess(results);
+```
 
 ```matlab
 addpath(fullfile(pwd, 'matlab'));
@@ -38,7 +43,7 @@ simulate_gaussian_turbulence_dataset( ...
     64);
 ```
 
-Generate the planned v1 dataset by increasing the arguments to `1000` frames and `256` resolution.
+The exported frames pass the S0 propagation checks, but they are independent static scenes rather than RL transitions. Increasing the arguments does not create a dynamic dataset; use the separate S1 environment described below for temporal transitions.
 
 Export the real 2x off-axis hologram validation set through the MATLAB reconstruction pipeline:
 
@@ -67,9 +72,30 @@ Detailed Chinese experiment notes are in:
 - `docs/数据格式.md`
 - `docs/MATLAB导出流程.md`
 - `docs/训练与评估流程.md`
+- `docs/S0物理门验证记录.md`
+- `docs/S1动态环境验证记录.md`
+- `docs/S2传统基线验证记录.md`
+- `docs/S3非线性动力学门槛计划.md`
+- `docs/S3数据量诊断计划.md`
 
 Run tests:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
 ```
+
+Run the verified S1 Taylor frozen-flow GPU environment:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_s1_smoke.py --steps 50
+```
+
+This command uses diagnostic proportional modal actions. It does not train an RL policy.
+
+Run the verified S2 final pure-simulation comparison:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_s2_baselines.py --final
+```
+
+S2 passed its reproducibility gate, but the dynamic memoryless ResUNet did not outperform the strongest traditional controller. No RL or real-SLM result is claimed.

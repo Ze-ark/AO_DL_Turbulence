@@ -1,0 +1,74 @@
+metadata:
+  stage: S3
+  purpose: diagnose_whether_gru_failure_is_data_or_capacity_limited
+  scientific_gate: exploratory_diagnostic_no_sealed_test
+  allow_scientific_claims: false
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+protected_original_experiment: configs/experiments/s3_dynamics_v1.yaml
+
+dataset:
+  sequence_length: 8
+  frames_per_episode: 160
+  random_action_std_rad: 0.05
+  physical_condition_count: 6
+
+  # 六个物理条件各有两批独立种子，共384个完整回合。较小规模从每个
+  # 物理条件均衡抽取，不能按窗口随机抽样。
+  train_pool_conditions:
+    - {id: diag_s035_d000_a, physical_id: s035_d000, wind_speed_mps: 0.35, wind_direction_deg: 0.0, base_seed: 510000}
+    - {id: diag_s035_d045_a, physical_id: s035_d045, wind_speed_mps: 0.35, wind_direction_deg: 45.0, base_seed: 511000}
+    - {id: diag_s050_d015_a, physical_id: s050_d015, wind_speed_mps: 0.50, wind_direction_deg: 15.0, base_seed: 512000}
+    - {id: diag_s050_d060_a, physical_id: s050_d060, wind_speed_mps: 0.50, wind_direction_deg: 60.0, base_seed: 513000}
+    - {id: diag_s065_d000_a, physical_id: s065_d000, wind_speed_mps: 0.65, wind_direction_deg: 0.0, base_seed: 514000}
+    - {id: diag_s065_d045_a, physical_id: s065_d045, wind_speed_mps: 0.65, wind_direction_deg: 45.0, base_seed: 515000}
+    - {id: diag_s035_d000_b, physical_id: s035_d000, wind_speed_mps: 0.35, wind_direction_deg: 0.0, base_seed: 520000}
+    - {id: diag_s035_d045_b, physical_id: s035_d045, wind_speed_mps: 0.35, wind_direction_deg: 45.0, base_seed: 521000}
+    - {id: diag_s050_d015_b, physical_id: s050_d015, wind_speed_mps: 0.50, wind_direction_deg: 15.0, base_seed: 522000}
+    - {id: diag_s050_d060_b, physical_id: s050_d060, wind_speed_mps: 0.50, wind_direction_deg: 60.0, base_seed: 523000}
+    - {id: diag_s065_d000_b, physical_id: s065_d000, wind_speed_mps: 0.65, wind_direction_deg: 0.0, base_seed: 524000}
+    - {id: diag_s065_d045_b, physical_id: s065_d045, wind_speed_mps: 0.65, wind_direction_deg: 45.0, base_seed: 525000}
+
+  # 新的开发验证条件，不使用已经观察过的S3验证回合，也不触碰原封存种子。
+  diagnostic_validation_conditions:
+    - {id: diag_val_s0375_d025, wind_speed_mps: 0.375, wind_direction_deg: 25.0, base_seed: 610000}
+    - {id: diag_val_s0525_d070, wind_speed_mps: 0.525, wind_direction_deg: 70.0, base_seed: 611000}
+    - {id: diag_val_s0625_d035, wind_speed_mps: 0.625, wind_direction_deg: 35.0, base_seed: 612000}
+
+diagnostic:
+  episode_scales: [48, 96, 192, 384]
+  primary_hidden_size: 128
+  capacity_episode_scale: 192
+  capacity_hidden_sizes: [32, 64, 128]
+  initialization_seeds: [20260811, 20260812, 20260813]
+
+model:
+  num_layers: 2
+  dropout: 0.10
+
+training:
+  # 所有数据规模和模型容量使用相同更新次数，避免把更多计算误认为更多数据有效。
+  optimizer_steps: 3600
+  validation_interval_steps: 120
+  batch_size: 256
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+
+baseline:
+  kind: ridge_autoregression_same_history
+  ridge_alpha: 0.001
+
+classification:
+  # 支持“数据受限”：192→384回合至少再改善10%，且48→384时GRU/岭回归
+  # 的误差比至少缩小25%。
+  supported_min_192_to_384_rmse_reduction: 0.10
+  supported_min_gap_ratio_reduction_48_to_384: 0.25
+  # 不支持“数据受限”：翻倍数据改善不足5%，或相对线性模型的差距没有缩小。
+  not_supported_max_192_to_384_rmse_reduction: 0.05
+  overparameterized_min_smaller_model_improvement: 0.05
+
+outputs:
+  dataset_h5: data/processed/s3_data_scaling_pool_v1.h5
+  checkpoint_directory: checkpoints/s3_data_scaling_v1
+  directory: outputs/s3_data_scaling_diagnostic_v1
