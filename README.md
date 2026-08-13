@@ -77,6 +77,10 @@ Detailed Chinese experiment notes are in:
 - `docs/S2传统基线验证记录.md`
 - `docs/S3非线性动力学门槛计划.md`
 - `docs/S3数据量诊断计划.md`
+- `docs/S3收敛与256维容量复查计划.md`
+- `docs/S3-B复杂动态门槛计划.md`
+- `docs/S4-A线性闭环鲁棒性计划.md`
+- `docs/S4-B一次性封存验证计划.md`
 
 Run tests:
 
@@ -99,3 +103,17 @@ Run the verified S2 final pure-simulation comparison:
 ```
 
 S2 passed its reproducibility gate, but the dynamic memoryless ResUNet did not outperform the strongest traditional controller. No RL or real-SLM result is claimed.
+
+S3-B finished with a negative result, while S4-A selected the leaky integrator and passed its development gate. Preflight the one-time S4-B sealed validation without opening sealed trajectories:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_s4_sealed_validation.py --preflight-only
+```
+
+The user opens the formal sealed validation once in the IDE terminal:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_s4_sealed_validation.py --acknowledge-sealed-test
+```
+
+It compares only the frozen leaky integrator against no correction. It refuses changed source hashes and repeated sealed access; it does not train RL or command either real SLM.

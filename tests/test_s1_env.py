@@ -125,6 +125,13 @@ def test_config_rejects_a_screen_that_repeats_inside_one_episode():
         config.validate()
 
 
+def test_config_requires_a_period_when_time_varying_wind_is_enabled():
+    config = _test_config(wind_speed_modulation_fraction=0.1)
+
+    with pytest.raises(ValueError, match="period_frames"):
+        config.validate()
+
+
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is required for the S1 GPU smoke test")
 def test_s1_environment_runs_on_cuda_without_cpu_fallback():
     config = _test_config(batch_size=4)

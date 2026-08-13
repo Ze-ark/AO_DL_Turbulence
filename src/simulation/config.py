@@ -26,6 +26,10 @@ class S1EnvConfig:
     wind_speed_mps: float = 0.5
     wind_direction_deg: float = 30.0
     frozen_flow_rho: float = 1.0
+    wind_speed_modulation_fraction: float = 0.0
+    wind_direction_modulation_deg: float = 0.0
+    wind_modulation_period_frames: int = 0
+    wind_modulation_phase_deg: float = 0.0
     num_modes: int = 10
     modal_limit_rad: float = 3.0
     slm_phase_min_rad: float = -3.141592653589793
@@ -72,8 +76,22 @@ class S1EnvConfig:
             raise ValueError("dt_s and episode_length must be positive")
         if not 0 <= self.frozen_flow_rho <= 1:
             raise ValueError("frozen_flow_rho must be between 0 and 1")
-        if not 1 <= self.num_modes <= 10:
-            raise ValueError("the S1 basis currently supports 1 to 10 modes")
+        if not 0 <= self.wind_speed_modulation_fraction <= 1:
+            raise ValueError("wind_speed_modulation_fraction must be between 0 and 1")
+        if self.wind_direction_modulation_deg < 0:
+            raise ValueError("wind_direction_modulation_deg must be non-negative")
+        modulation_enabled = (
+            self.wind_speed_modulation_fraction > 0
+            or self.wind_direction_modulation_deg > 0
+        )
+        if modulation_enabled and self.wind_modulation_period_frames < 2:
+            raise ValueError(
+                "wind_modulation_period_frames must be at least 2 when modulation is enabled"
+            )
+        if not modulation_enabled and self.wind_modulation_period_frames < 0:
+            raise ValueError("wind_modulation_period_frames must be non-negative")
+        if not 1 <= self.num_modes <= 256:
+            raise ValueError("the simulation action size must be between 1 and 256")
         if self.slm_phase_max_rad <= self.slm_phase_min_rad:
             raise ValueError("SLM maximum phase must exceed minimum phase")
         if (
@@ -90,8 +108,11 @@ class S1EnvConfig:
             raise ValueError("metric radius and reward penalty weights must be non-negative")
         if self.batch_size <= 0:
             raise ValueError("batch_size must be positive")
+        maximum_wind_speed = self.wind_speed_mps * (
+            1 + self.wind_speed_modulation_fraction
+        )
         episode_displacement_pixels = (
-            self.wind_speed_mps * self.dt_s * self.episode_length / self.sample_pitch_m
+            maximum_wind_speed * self.dt_s * self.episode_length / self.sample_pitch_m
         )
         if episode_displacement_pixels >= self.turbulence_grid_size:
             raise ValueError(

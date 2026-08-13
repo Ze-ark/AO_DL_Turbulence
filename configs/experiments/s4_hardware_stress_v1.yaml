@@ -1,0 +1,204 @@
+metadata:
+  stage: S4-C0
+  purpose: conservative_hardware_error_stress_test
+  scientific_gate: frozen_classical_controller_hardware_robustness
+  allow_scientific_claims: false
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+upstream_s4b_summary: outputs/s4_sealed_validation_v1/summary.json
+upstream_s4b_summary_sha256: 22e5f922dd1551c0495bce4fd52ff016233a25bca04175aac1f5fdcd89766b6a
+
+frozen_controller:
+  name: leaky_integrator
+  parameters:
+    gain: 0.35
+    leak: 0.10
+
+evaluation:
+  reference_controller: no_correction
+  primary_metric: power_in_bucket
+  observation_kind: noisy_oracle_modal_features_with_assumed_hardware_errors
+  steps: 200
+  episodes_per_physical_condition: 32
+
+# 三种物理动态共享到每个硬件档位，使硬件档位之间能够使用相同扰动配对比较。
+physical_conditions:
+  - id: c0_frozen
+    regime: frozen_stationary
+    base_seed: 1400000
+    wind_speed_mps: 0.50
+    wind_direction_deg: 20.0
+    slm_delay_frames: 2
+  - id: c0_boiling
+    regime: boiling_stationary_wind
+    base_seed: 1401000
+    wind_speed_mps: 0.55
+    wind_direction_deg: 55.0
+    frozen_flow_rho: 0.995
+    slm_delay_frames: 2
+  - id: c0_combined
+    regime: boiling_varying_wind_noisy
+    base_seed: 1402000
+    wind_speed_mps: 0.60
+    wind_direction_deg: 75.0
+    frozen_flow_rho: 0.995
+    wind_speed_modulation_fraction: 0.15
+    wind_direction_modulation_deg: 15.0
+    wind_modulation_period_frames: 80
+    wind_modulation_phase_deg: 45.0
+    slm_delay_frames: 2
+
+hardware_profiles:
+  - id: nominal
+    label: 基准
+    severity: nominal
+    required_for_gate: true
+  - id: delay_1
+    label: 一帧延迟
+    severity: single
+    required_for_gate: true
+    slm_delay_frames: 1
+  - id: delay_3
+    label: 三帧延迟
+    severity: single
+    required_for_gate: true
+    slm_delay_frames: 3
+  - id: quantization_64
+    label: 64级量化
+    severity: single
+    required_for_gate: true
+    slm_quantization_levels: 64
+  - id: quantization_128
+    label: 128级量化
+    severity: single
+    required_for_gate: true
+    slm_quantization_levels: 128
+  - id: lut_scale_085
+    label: 相位比例0.85
+    severity: single
+    required_for_gate: true
+    phase_scale: 0.85
+  - id: lut_scale_115
+    label: 相位比例1.15
+    severity: single
+    required_for_gate: true
+    phase_scale: 1.15
+  - id: settling_050
+    label: 每帧完成50%
+    severity: single
+    required_for_gate: true
+    settling_fraction: 0.50
+  - id: settling_075
+    label: 每帧完成75%
+    severity: single
+    required_for_gate: true
+    settling_fraction: 0.75
+  - id: registration_moderate
+    label: 配准误差中等
+    severity: single
+    required_for_gate: true
+    shift_x_pixels: 1.0
+    shift_y_pixels: 1.0
+    rotation_deg: 0.5
+  - id: registration_severe
+    label: 配准误差严重
+    severity: single
+    required_for_gate: true
+    shift_x_pixels: 2.0
+    shift_y_pixels: 2.0
+    rotation_deg: 1.0
+  - id: observation_noise_005
+    label: 观测噪声0.05rad
+    severity: single
+    required_for_gate: true
+    observation_noise_std_rad: 0.05
+  - id: observation_noise_010
+    label: 观测噪声0.10rad
+    severity: single
+    required_for_gate: true
+    observation_noise_std_rad: 0.10
+  - id: power_noise_001
+    label: 功率读数噪声1%
+    severity: single
+    required_for_gate: true
+    power_noise_relative_std: 0.01
+  - id: power_noise_003
+    label: 功率读数噪声3%
+    severity: single
+    required_for_gate: true
+    power_noise_relative_std: 0.03
+  - id: combined_moderate
+    label: 组合中等
+    severity: combined_moderate
+    required_for_gate: true
+    slm_delay_frames: 2
+    slm_quantization_levels: 128
+    phase_scale: 0.90
+    settling_fraction: 0.75
+    shift_x_pixels: 1.0
+    shift_y_pixels: 1.0
+    rotation_deg: 0.5
+    observation_noise_std_rad: 0.05
+    power_noise_relative_std: 0.01
+  - id: combined_severe
+    label: 组合严重失效边界
+    severity: combined_severe
+    required_for_gate: false
+    slm_delay_frames: 3
+    slm_quantization_levels: 64
+    phase_scale: 0.85
+    settling_fraction: 0.50
+    shift_x_pixels: 2.0
+    shift_y_pixels: 2.0
+    rotation_deg: 1.0
+    observation_noise_std_rad: 0.10
+    power_noise_relative_std: 0.03
+
+gate:
+  min_power_delta_ci95_low: 0.05
+  min_mean_relative_power_gain: 0.10
+  min_strehl_delta_ci95_low: 0.0
+  max_phase_rmse_delta_ci95_high: 0.0
+  max_violation_fraction: 0.05
+  require_every_condition_power_positive: true
+
+quick:
+  steps: 10
+  batch_size: 2
+  physical_condition:
+    id: quick_combined
+    regime: boiling_varying_wind_noisy
+    base_seed: 1990000
+    wind_speed_mps: 0.4
+    wind_direction_deg: 30.0
+    frozen_flow_rho: 0.995
+    wind_speed_modulation_fraction: 0.10
+    wind_direction_modulation_deg: 10.0
+    wind_modulation_period_frames: 20
+    observation_noise_std_rad: 0.0
+    slm_delay_frames: 2
+  profile_ids:
+    - nominal
+    - combined_moderate
+
+outputs:
+  directory: outputs/s4_hardware_stress_v1
+  export_trajectories: true
+
+# 正式运行前冻结；实现完成后由预检逐项核对，不能静默更新。
+source_manifest:
+  scripts/run_s4_hardware_stress.py: c5315c9701f7c0e1ae19bbc4468f65f320cc40d877d922cd1dc605f941bab7fe
+  src/__init__.py: 46d89925e6c39c642862d0d10e428ad4df12a6c836fe838eec2a9161a28fedbe
+  src/runtime.py: 22f9bf57b7dbb41617cca8ae77fdfa12551651b2736f32dccca47e3cbd38e319
+  src/training_progress.py: 9f7c11f434ab5a8b063938f713f70f083d05fa06f4ddc37b72e1f4772adf8b16
+  src/simulation/__init__.py: 757dd03e59f857f67ef65b0cad1dc764d038cda513e5670d908e5a641be5b554
+  src/simulation/config.py: d2610bc59562523d7a91aba424484fe0d8f771e72d06bb6143c89a056b312345
+  src/simulation/controllers.py: 7e1f253a3a43593a8415ed834eea8b89f6a56fca42335a916b80b1dff31517ee
+  src/simulation/env.py: 16f40d4710ee0f71781e96bd81d0ff31a680bdeb5c7c88420da0e27088aa8620
+  src/simulation/evaluation.py: ed29e6ca9a046d0408acf1e7d1604e221fd1fe063731004ee8a166f88f64bcbb
+  src/simulation/hardware_effects.py: 4470028fd05f8912dae88f30b4caf9b1a917e47c677a6f8df7bb7bd0488ea3d6
+  src/simulation/modes.py: a98f6983316478b937bafbbfcbee9fd0230ce57bc2950db27aa78dd650823085
+  src/simulation/optics.py: 91bfe7f74736d4452d38fa9ed8b9301e7474f48e62f9b99aaef9493a80dc0f8e
+  src/simulation/robust_control.py: e9e9c3501725898342030112cffffc764c92a0ae2553435f7532d870588563d3
+  src/simulation/slm.py: a035dc1816c9d48699d3ba62b71e90dd7afd35c4f1f9d3f47e8907918cc571ed
+  src/simulation/turbulence.py: 40ce5b1c846bdee1b2c5a5fcc708d3f8cde5574c049170b6d4a968510b62622c

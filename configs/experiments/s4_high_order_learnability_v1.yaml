@@ -1,0 +1,272 @@
+metadata:
+  stage: S4-D2-R2-HIGH-ORDER-LEARNABILITY
+  purpose: test_whether_deployable_four_frame_observations_can_predict_useful_added_mode_oracle_actions
+  hypothesis: the_same_observation_available_to_old_sac_contains_enough_information_to_predict_fixed_two_frame_added_mode_actions
+  allow_supervised_training: true
+  allow_rl_training: false
+  allow_reward_change: false
+  allow_algorithm_comparison: false
+  allow_prior_trajectory_reuse: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+  allow_future_truth_in_teacher_labels: true
+  allow_future_truth_in_model_inputs: false
+  allow_exact_registration_in_teacher_labels: true
+  allow_hardware_profile_id_in_model_inputs: false
+
+upstream_capacity:
+  summary: outputs/s4_high_order_capacity_v1/summary.json
+  summary_sha256: 2085e4b817f23ed1ed345807546fa0ab2ecc4e9f0de781b04f9fc3740ec134fc
+  scenario_records: outputs/s4_high_order_capacity_v1/scenario_records.csv
+  scenario_records_sha256: 98094d334f303e325a48c1a51a3b89547a117a0638d0487688d38119112b9fb7
+  episode_records: outputs/s4_high_order_capacity_v1/episode_records.csv
+  episode_records_sha256: f9a0cf693d65bc88dec1130d034ef9952dabacb36def738c86ba9789a4b277f4
+  preflight: outputs/s4_high_order_capacity_v1/preflight.json
+  preflight_sha256: 84f31a919cf6ba9993fcc6e257417ffd0d5a272c8d2fde2cf07c56f5e02b625f
+  effective_config: outputs/s4_high_order_capacity_v1/effective_config.json
+  effective_config_sha256: 0444e3e62d1a70d8e372204407ab61e864c5c8ba0b553eb48d8491ba595e8b8f
+  source_manifest: outputs/s4_high_order_capacity_v1/source_manifest.json
+  source_manifest_sha256: 0343488ea89f938b669a8a8eaf7497e6955543b3722db1981cb548fc4ce5180e
+  experiment_config: configs/experiments/s4_high_order_capacity_v1.yaml
+  experiment_config_sha256: b4ccdb9c9bb399130f2e6d9f4050b938c908cca58b93f34388871502368aed1d
+  audit_record: docs/S4-D2-R2新增高阶子空间容量审计记录.md
+  audit_record_sha256: 1e97d7ceb3e7b57178d13d77fbcbaac1342ce664898219df4d2bb90f82fbddcc
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+environment_config_sha256: 8172a07efb2607544011a9fc959f4ab4fbed9a471de9c0112dd15f1d45e5976a
+hardware_profile_source: configs/experiments/s4_hardware_stress_v1.yaml
+hardware_profile_source_sha256: fb6cb5a3e86fa0445345e47b084722a5c1613d07eab73f596c32afb6c4ce07e8
+
+representation:
+  id: zernike_21_added_11
+  kind: zernike
+  num_modes: 21
+  anchor_modes: 10
+  output_modes: 11
+
+frozen_controller:
+  id: tracking_conservative
+  active_anchor_modes: 10
+  kind: tracking_leaky_integrator
+  parameters:
+    gain: 0.25
+    leak: 0.10
+    tracking_gain: 0.50
+    max_request_step_rad: 0.15
+
+action_budget:
+  residual_component_limit_rad: 0.05
+  final_component_step_limit_rad: 0.15
+  preserve_total_phase_rms_budget: true
+  total_budget_anchor_modes: 10
+  preserve_environment_modal_limit: true
+
+teacher:
+  preview_horizon_frames: 2
+  uses_future_simulator_truth_for_labels: true
+  uses_exact_registration_for_labels: true
+  target: realized_added_residual_normalized_by_component_limit
+  anchor_residual_coordinates_forced_zero: true
+
+policy_observation:
+  history_frames: 4
+  state_size: 210
+  include_future_truth: false
+  include_oracle_quality_metrics: false
+  include_hardware_profile_identifier: false
+  fields:
+    - residual_modal_noisy_all_21_modes
+    - applied_modal_all_21_modes
+    - requested_modal_all_21_modes
+    - frozen_ten_mode_baseline_delta_zero_padded
+
+model:
+  kind: two_layer_mlp_matching_old_sac_actor_backbone
+  hidden_size: 256
+  output_activation: tanh
+  output_size: 11
+  ridge_alpha: 0.001
+
+training:
+  initialization_seeds: [8201, 8202, 8203]
+  batch_size: 1024
+  learning_rate: 0.0003
+  weight_decay: 0.000001
+  max_optimizer_steps: 6000
+  min_optimizer_steps: 1500
+  validation_interval_steps: 200
+  early_stopping_patience_checks: 10
+  early_stopping_relative_min_delta: 0.0005
+  gradient_clip_norm: 1.0
+  normalization_min_scale: 0.000001
+
+dataset:
+  steps_per_episode: 200
+  training_episodes_per_condition: 32
+  validation_episodes_per_condition: 16
+  diagnostic_test_episodes_per_condition: 16
+  profile_ids:
+    - nominal
+    - delay_3
+    - settling_050
+    - registration_moderate
+    - registration_severe
+    - combined_moderate
+  training_conditions:
+    - id: learn_train_frozen
+      regime: frozen_stationary
+      base_seed: 3300000
+      wind_speed_mps: 0.45
+      wind_direction_deg: 15.0
+      slm_delay_frames: 2
+    - id: learn_train_boiling
+      regime: boiling_stationary_wind
+      base_seed: 3301000
+      wind_speed_mps: 0.55
+      wind_direction_deg: 60.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+    - id: learn_train_combined
+      regime: boiling_varying_wind_noisy
+      base_seed: 3302000
+      wind_speed_mps: 0.60
+      wind_direction_deg: 75.0
+      frozen_flow_rho: 0.995
+      wind_speed_modulation_fraction: 0.15
+      wind_direction_modulation_deg: 15.0
+      wind_modulation_period_frames: 80
+      wind_modulation_phase_deg: 135.0
+      slm_delay_frames: 2
+  validation_conditions:
+    - id: learn_val_frozen
+      regime: frozen_stationary
+      base_seed: 3400000
+      wind_speed_mps: 0.50
+      wind_direction_deg: 25.0
+      slm_delay_frames: 2
+    - id: learn_val_boiling
+      regime: boiling_stationary_wind
+      base_seed: 3401000
+      wind_speed_mps: 0.60
+      wind_direction_deg: 50.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+    - id: learn_val_combined
+      regime: boiling_varying_wind_noisy
+      base_seed: 3402000
+      wind_speed_mps: 0.55
+      wind_direction_deg: 80.0
+      frozen_flow_rho: 0.995
+      wind_speed_modulation_fraction: 0.15
+      wind_direction_modulation_deg: 15.0
+      wind_modulation_period_frames: 80
+      wind_modulation_phase_deg: 225.0
+      slm_delay_frames: 2
+  diagnostic_test_conditions:
+    - id: learn_test_frozen
+      regime: frozen_stationary
+      base_seed: 3450000
+      wind_speed_mps: 0.525
+      wind_direction_deg: 30.0
+      slm_delay_frames: 2
+    - id: learn_test_boiling
+      regime: boiling_stationary_wind
+      base_seed: 3451000
+      wind_speed_mps: 0.625
+      wind_direction_deg: 45.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+    - id: learn_test_combined
+      regime: boiling_varying_wind_noisy
+      base_seed: 3452000
+      wind_speed_mps: 0.50
+      wind_direction_deg: 85.0
+      frozen_flow_rho: 0.995
+      wind_speed_modulation_fraction: 0.15
+      wind_direction_modulation_deg: 15.0
+      wind_modulation_period_frames: 80
+      wind_modulation_phase_deg: 270.0
+      slm_delay_frames: 2
+
+offline_gate:
+  min_skill_score_against_zero: 0.30
+  min_mean_cosine_similarity: 0.30
+  require_every_initialization: true
+
+closed_loop_gate:
+  proposed_min_relative_power_gain: 0.02
+  min_power_delta_ci95_low: 0.0
+  min_strehl_delta_ci95_low: 0.0
+  max_phase_rmse_delta_ci95_high: 0.0
+  max_violation_fraction: 0.05
+  require_all_profiles_pass: true
+  require_every_initialization: true
+
+protected_seed_ranges:
+  - id: all_prior_stages_and_capacity
+    start_inclusive: 0
+    end_exclusive: 3300000
+  - id: reserved_future_rl_and_s4d3
+    start_inclusive: 3500000
+    end_exclusive: 5000000
+
+quick:
+  steps_per_episode: 12
+  training_episodes_per_condition: 2
+  validation_episodes_per_condition: 2
+  diagnostic_test_episodes_per_condition: 2
+  profile_ids: [nominal]
+  training_conditions:
+    - id: learn_quick_train
+      regime: boiling_stationary_wind
+      base_seed: 3490000
+      wind_speed_mps: 0.50
+      wind_direction_deg: 45.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+  validation_conditions:
+    - id: learn_quick_val
+      regime: boiling_stationary_wind
+      base_seed: 3490100
+      wind_speed_mps: 0.55
+      wind_direction_deg: 50.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+  diagnostic_test_conditions:
+    - id: learn_quick_test
+      regime: boiling_stationary_wind
+      base_seed: 3490200
+      wind_speed_mps: 0.60
+      wind_direction_deg: 55.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+  initialization_seeds: [9901]
+  hidden_size: 32
+  batch_size: 16
+  max_optimizer_steps: 20
+  min_optimizer_steps: 4
+  validation_interval_steps: 2
+  early_stopping_patience_checks: 4
+
+outputs:
+  directory: outputs/s4_high_order_learnability_v1
+  quick_directory: outputs/s4_high_order_learnability_v1_quick
+
+tracked_source_files:
+  - scripts/train_s4_high_order_learnability.py
+  - src/runtime.py
+  - src/training_progress.py
+  - src/rl/residual_control.py
+  - src/rl/s4_high_order_learnability.py
+  - src/rl/s4_high_order_capacity.py
+  - src/rl/s4_oracle_bound.py
+  - src/rl/s4_representation_capacity.py
+  - src/rl/s4_r2_diagnostic.py
+  - src/rl/s4_training.py
+  - src/simulation/config.py
+  - src/simulation/controllers.py
+  - src/simulation/env.py
+  - src/simulation/hardware_effects.py
+  - src/simulation/modes.py
+  - src/simulation/robust_control.py
+  - src/simulation/turbulence.py

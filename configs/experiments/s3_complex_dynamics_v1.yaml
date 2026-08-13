@@ -1,0 +1,92 @@
+metadata:
+  stage: S3-B
+  purpose: test_nonlinear_prediction_under_complex_dynamic_conditions
+  scientific_gate: complex_dynamics_before_rl
+  allow_scientific_claims: false
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+upstream_convergence_summary: outputs/s3_convergence_capacity_v1/summary.json
+protected_experiments:
+  - configs/experiments/s3_dynamics_v1.yaml
+  - configs/experiments/s3_data_scaling_diagnostic_v1.yaml
+
+dataset:
+  sequence_length: 8
+  # SLM延迟和计算耗时会要求提前预测；本轮统一预测两帧后，而不是只预测下一帧。
+  prediction_horizon_frames: 2
+  frames_per_episode: 200
+  random_action_std_rad: 0.05
+  train_conditions:
+    # A类：固定风、严格泰勒冻结流，作为难度对照。
+    - {id: train_frozen_01, regime: frozen_stationary, wind_speed_mps: 0.35, wind_direction_deg: 0.0, base_seed: 810000}
+    - {id: train_frozen_02, regime: frozen_stationary, wind_speed_mps: 0.45, wind_direction_deg: 45.0, base_seed: 811000}
+    - {id: train_frozen_03, regime: frozen_stationary, wind_speed_mps: 0.55, wind_direction_deg: 15.0, base_seed: 812000}
+    - {id: train_frozen_04, regime: frozen_stationary, wind_speed_mps: 0.65, wind_direction_deg: 60.0, base_seed: 813000}
+
+    # B类：风不变，但相位屏每帧发生少量“沸腾”形变，并加入轻微模态观测噪声。
+    - {id: train_boiling_01, regime: boiling_stationary_wind, wind_speed_mps: 0.35, wind_direction_deg: 15.0, base_seed: 820000, frozen_flow_rho: 0.995, observation_noise_std_rad: 0.01}
+    - {id: train_boiling_02, regime: boiling_stationary_wind, wind_speed_mps: 0.45, wind_direction_deg: 60.0, base_seed: 821000, frozen_flow_rho: 0.995, observation_noise_std_rad: 0.01}
+    - {id: train_boiling_03, regime: boiling_stationary_wind, wind_speed_mps: 0.55, wind_direction_deg: 0.0, base_seed: 822000, frozen_flow_rho: 0.995, observation_noise_std_rad: 0.01}
+    - {id: train_boiling_04, regime: boiling_stationary_wind, wind_speed_mps: 0.65, wind_direction_deg: 45.0, base_seed: 823000, frozen_flow_rho: 0.995, observation_noise_std_rad: 0.01}
+
+    # C类：沸腾、缓慢变风和较强观测噪声同时存在。
+    - {id: train_combined_01, regime: boiling_varying_wind_noisy, wind_speed_mps: 0.35, wind_direction_deg: 10.0, base_seed: 830000, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 0.0, observation_noise_std_rad: 0.02}
+    - {id: train_combined_02, regime: boiling_varying_wind_noisy, wind_speed_mps: 0.45, wind_direction_deg: 55.0, base_seed: 831000, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 90.0, observation_noise_std_rad: 0.02}
+    - {id: train_combined_03, regime: boiling_varying_wind_noisy, wind_speed_mps: 0.55, wind_direction_deg: 25.0, base_seed: 832000, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 180.0, observation_noise_std_rad: 0.02}
+    - {id: train_combined_04, regime: boiling_varying_wind_noisy, wind_speed_mps: 0.60, wind_direction_deg: 70.0, base_seed: 833000, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 270.0, observation_noise_std_rad: 0.02}
+
+  # 验证风速、风向、调制相位和回合种子均未出现在训练集中。
+  validation_conditions:
+    - {id: val_frozen_01, regime: frozen_stationary, wind_speed_mps: 0.40, wind_direction_deg: 30.0, base_seed: 910000}
+    - {id: val_frozen_02, regime: frozen_stationary, wind_speed_mps: 0.60, wind_direction_deg: 75.0, base_seed: 911000}
+    - {id: val_boiling_01, regime: boiling_stationary_wind, wind_speed_mps: 0.375, wind_direction_deg: 20.0, base_seed: 912000, frozen_flow_rho: 0.995, observation_noise_std_rad: 0.01}
+    - {id: val_boiling_02, regime: boiling_stationary_wind, wind_speed_mps: 0.575, wind_direction_deg: 65.0, base_seed: 913000, frozen_flow_rho: 0.995, observation_noise_std_rad: 0.01}
+    - {id: val_combined_01, regime: boiling_varying_wind_noisy, wind_speed_mps: 0.425, wind_direction_deg: 40.0, base_seed: 914000, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 45.0, observation_noise_std_rad: 0.02}
+    - {id: val_combined_02, regime: boiling_varying_wind_noisy, wind_speed_mps: 0.575, wind_direction_deg: 80.0, base_seed: 915000, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 135.0, observation_noise_std_rad: 0.02}
+
+  # 本脚本只检查这些元数据，不生成、不读取封存数据。
+  sealed_test_conditions:
+    - {id: test_frozen_01, regime: frozen_stationary, wind_speed_mps: 0.425, wind_direction_deg: 5.0, base_seed: 1010000}
+    - {id: test_frozen_02, regime: frozen_stationary, wind_speed_mps: 0.625, wind_direction_deg: 50.0, base_seed: 1011000}
+    - {id: test_boiling_01, regime: boiling_stationary_wind, wind_speed_mps: 0.475, wind_direction_deg: 35.0, base_seed: 1012000, frozen_flow_rho: 0.995, observation_noise_std_rad: 0.01}
+    - {id: test_boiling_02, regime: boiling_stationary_wind, wind_speed_mps: 0.625, wind_direction_deg: 85.0, base_seed: 1013000, frozen_flow_rho: 0.995, observation_noise_std_rad: 0.01}
+    - {id: test_combined_01, regime: boiling_varying_wind_noisy, wind_speed_mps: 0.475, wind_direction_deg: 15.0, base_seed: 1014000, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 225.0, observation_noise_std_rad: 0.02}
+    - {id: test_combined_02, regime: boiling_varying_wind_noisy, wind_speed_mps: 0.625, wind_direction_deg: 60.0, base_seed: 1015000, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 315.0, observation_noise_std_rad: 0.02}
+
+model:
+  hidden_size: 256
+  num_layers: 2
+  dropout: 0.10
+
+training:
+  initialization_seeds: [20260821, 20260822, 20260823]
+  min_optimizer_steps: 3600
+  max_optimizer_steps: 10800
+  validation_interval_steps: 120
+  batch_size: 256
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+  early_stopping_patience_checks: 12
+  early_stopping_relative_min_delta: 0.002
+  scheduler_patience_checks: 5
+  scheduler_factor: 0.5
+  minimum_learning_rate: 0.00001
+  final_window_checks: 5
+  max_final_window_improvement: 0.01
+
+baseline:
+  kind: ridge_autoregression_same_history_conditioned_by_regime
+  ridge_alpha: 0.001
+
+gate:
+  # 以3次独立模型初始化为复现单位；平均至少提高5%，95%区间下界还必须大于0。
+  min_mean_skill_score: 0.05
+  min_ci95_low: 0.0
+  require_every_run_positive: true
+  require_every_condition_positive: true
+
+outputs:
+  dataset_h5: data/processed/s3_complex_dynamics_v1.h5
+  checkpoint_directory: checkpoints/s3_complex_dynamics_v1
+  directory: outputs/s3_complex_dynamics_v1

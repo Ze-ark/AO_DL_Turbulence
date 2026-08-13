@@ -1,0 +1,57 @@
+metadata:
+  stage: S4-B
+  purpose: one_time_sealed_validation_of_frozen_leaky_integrator
+  scientific_gate: confirm_s4a_controller_on_unopened_conditions
+  allow_scientific_claims: false
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+upstream_s4a_summary: outputs/s4_linear_robustness_v1/summary.json
+upstream_s4a_config: configs/experiments/s4_linear_robustness_v1.yaml
+
+frozen_controller:
+  name: leaky_integrator
+  parameters:
+    gain: 0.35
+    leak: 0.10
+  selected_by: S4-A_development_power_in_bucket
+
+evaluation:
+  steps: 200
+  primary_metric: power_in_bucket
+  observation_kind: noisy_oracle_modal_features
+  common_slm_delay_frames: 2
+  reference_controller: no_correction
+  sealed_condition_ids:
+    - test_frozen_01
+    - test_frozen_02
+    - test_boiling_01
+    - test_boiling_02
+    - test_combined_01
+    - test_combined_02
+
+gate:
+  # 封存前预声明：不仅要求方向正确，还要求桶内功率有实际大小的改善。
+  min_power_delta_ci95_low: 0.05
+  min_mean_relative_power_gain: 0.10
+  min_strehl_delta_ci95_low: 0.0
+  max_phase_rmse_delta_ci95_high: 0.0
+  max_violation_fraction: 0.05
+  require_every_condition_power_positive: true
+
+# 这些哈希在封存测试打开前冻结。任一代码文件变化都必须停止，不能自动更新后继续。
+source_manifest:
+  scripts/run_s4_sealed_validation.py: fd8730a889713c01897d94afd2dd38222a944d0fe21c8f5b334a4794ba54e475
+  src/runtime.py: 22f9bf57b7dbb41617cca8ae77fdfa12551651b2736f32dccca47e3cbd38e319
+  src/training_progress.py: 9f7c11f434ab5a8b063938f713f70f083d05fa06f4ddc37b72e1f4772adf8b16
+  src/simulation/config.py: d2610bc59562523d7a91aba424484fe0d8f771e72d06bb6143c89a056b312345
+  src/simulation/controllers.py: 7e1f253a3a43593a8415ed834eea8b89f6a56fca42335a916b80b1dff31517ee
+  src/simulation/env.py: 548e6abdf619a75bee461e6437a8154cb2de8ba51246ecad21d1eb2e810f6c31
+  src/simulation/evaluation.py: aa58b28eb3ffbf8d899b387555ea9648658f779132f6c2aac53817caa0f486d7
+  src/simulation/modes.py: a98f6983316478b937bafbbfcbee9fd0230ce57bc2950db27aa78dd650823085
+  src/simulation/optics.py: 91bfe7f74736d4452d38fa9ed8b9301e7474f48e62f9b99aaef9493a80dc0f8e
+  src/simulation/robust_control.py: e9e9c3501725898342030112cffffc764c92a0ae2553435f7532d870588563d3
+  src/simulation/turbulence.py: 40ce5b1c846bdee1b2c5a5fcc708d3f8cde5574c049170b6d4a968510b62622c
+
+outputs:
+  directory: outputs/s4_sealed_validation_v1
+  export_trajectories: true

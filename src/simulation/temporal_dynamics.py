@@ -16,12 +16,19 @@ from src.simulation.env import AdaptiveOpticsEnv
 
 @dataclass(frozen=True)
 class DynamicsCondition:
-    """一个可追溯的风速、风向和随机种子条件。"""
+    """一个可追溯的动态类型、风场、沸腾、噪声和随机种子条件。"""
 
     identifier: str
     wind_speed_mps: float
     wind_direction_deg: float
     base_seed: int
+    regime: str = "frozen_stationary"
+    frozen_flow_rho: float = 1.0
+    wind_speed_modulation_fraction: float = 0.0
+    wind_direction_modulation_deg: float = 0.0
+    wind_modulation_period_frames: int = 0
+    wind_modulation_phase_deg: float = 0.0
+    observation_noise_std_rad: float = 0.0
 
     @classmethod
     def from_mapping(cls, values: dict[str, Any]) -> "DynamicsCondition":
@@ -30,6 +37,19 @@ class DynamicsCondition:
             wind_speed_mps=float(values["wind_speed_mps"]),
             wind_direction_deg=float(values["wind_direction_deg"]),
             base_seed=int(values["base_seed"]),
+            regime=str(values.get("regime", "frozen_stationary")),
+            frozen_flow_rho=float(values.get("frozen_flow_rho", 1.0)),
+            wind_speed_modulation_fraction=float(
+                values.get("wind_speed_modulation_fraction", 0.0)
+            ),
+            wind_direction_modulation_deg=float(
+                values.get("wind_direction_modulation_deg", 0.0)
+            ),
+            wind_modulation_period_frames=int(
+                values.get("wind_modulation_period_frames", 0)
+            ),
+            wind_modulation_phase_deg=float(values.get("wind_modulation_phase_deg", 0.0)),
+            observation_noise_std_rad=float(values.get("observation_noise_std_rad", 0.0)),
         )
 
 
@@ -102,15 +122,21 @@ def generate_temporal_dynamics_data(
     sequence_length: int,
     frames_per_episode: int,
     random_action_std_rad: float,
+    prediction_horizon_frames: int = 1,
     progress_callback: Callable[[int, int], None] | None = None,
 ) -> TemporalDynamicsData:
-    """从公开模态观测重建扰动，并按回合生成时序监督样本。"""
+    """从公开模态观测重建扰动，并按回合生成带噪历史和无噪目标。"""
     if not conditions:
         raise ValueError("conditions must not be empty")
     if sequence_length < 2:
         raise ValueError("sequence_length must be at least 2 for the linear baseline")
-    if not sequence_length <= frames_per_episode <= base_config.episode_length:
-        raise ValueError("frames_per_episode must cover the sequence and fit the episode")
+    if prediction_horizon_frames < 1:
+        raise ValueError("prediction_horizon_frames must be positive")
+    minimum_frames = sequence_length + prediction_horizon_frames - 1
+    if not minimum_frames <= frames_per_episode <= base_config.episode_length:
+        raise ValueError(
+            "frames_per_episode must cover the sequence and prediction horizon and fit the episode"
+        )
     if random_action_std_rad < 0:
         raise ValueError("random_action_std_rad must be non-negative")
 
@@ -129,14 +155,27 @@ def generate_temporal_dynamics_data(
                 base_config,
                 wind_speed_mps=condition.wind_speed_mps,
                 wind_direction_deg=condition.wind_direction_deg,
+                frozen_flow_rho=condition.frozen_flow_rho,
+                wind_speed_modulation_fraction=condition.wind_speed_modulation_fraction,
+                wind_direction_modulation_deg=condition.wind_direction_modulation_deg,
+                wind_modulation_period_frames=condition.wind_modulation_period_frames,
+                wind_modulation_phase_deg=condition.wind_modulation_phase_deg,
             )
             config.validate()
+            if condition.observation_noise_std_rad < 0:
+                raise ValueError("observation_noise_std_rad must be non-negative")
             environment = AdaptiveOpticsEnv(config, actual_device)
             observation, _ = environment.reset(seed=condition.base_seed)
             action_generator = torch.Generator(device=actual_device).manual_seed(
                 condition.base_seed + 20_000_000
             )
-            states = [_disturbance_from_observation(observation, config.num_modes).cpu()]
+            noise_generator = torch.Generator().manual_seed(condition.base_seed + 30_000_000)
+            true_states = [_disturbance_from_observation(observation, config.num_modes).cpu()]
+            observed_states = [
+                _add_observation_noise(
+                    true_states[0], condition.observation_noise_std_rad, noise_generator
+                )
+            ]
             for _ in range(frames_per_episode):
                 action = random_action_std_rad * torch.randn(
                     config.batch_size,
@@ -145,20 +184,33 @@ def generate_temporal_dynamics_data(
                     device=actual_device,
                 )
                 observation, _, terminal, _, _ = environment.step(action)
-                states.append(_disturbance_from_observation(observation, config.num_modes).cpu())
+                true_state = _disturbance_from_observation(observation, config.num_modes).cpu()
+                true_states.append(true_state)
+                observed_states.append(
+                    _add_observation_noise(
+                        true_state, condition.observation_noise_std_rad, noise_generator
+                    )
+                )
                 completed_steps += 1
                 if progress_callback is not None:
                     progress_callback(completed_steps, total_steps)
                 if terminal.all() and completed_steps % frames_per_episode:
                     raise RuntimeError("environment terminated before requested frames were generated")
 
-            state_tensor = torch.stack(states, dim=1)
-            windows = state_tensor.unfold(1, sequence_length, 1)
+            true_state_tensor = torch.stack(true_states, dim=1)
+            observed_state_tensor = torch.stack(observed_states, dim=1)
+            windows = observed_state_tensor.unfold(1, sequence_length, 1)
             # unfold把新维度放在末尾：[episode, window, mode, sequence]。
             windows = windows.permute(0, 1, 3, 2)
-            sample_count = frames_per_episode - sequence_length + 1
+            sample_count = (
+                frames_per_episode
+                - sequence_length
+                - prediction_horizon_frames
+                + 2
+            )
             histories = windows[:, :sample_count]
-            targets = state_tensor[:, sequence_length : sequence_length + sample_count]
+            target_start = sequence_length + prediction_horizon_frames - 1
+            targets = true_state_tensor[:, target_start : target_start + sample_count]
             history_parts.append(histories.flatten(0, 1))
             target_parts.append(targets.flatten(0, 1))
 
@@ -175,8 +227,8 @@ def generate_temporal_dynamics_data(
             )
             step_parts.append(
                 torch.arange(
-                    sequence_length,
-                    sequence_length + sample_count,
+                    target_start,
+                    target_start + sample_count,
                     dtype=torch.int64,
                 )
                 .unsqueeze(0)
@@ -400,3 +452,19 @@ def _disturbance_from_observation(observation: torch.Tensor, num_modes: int) -> 
     residual = observation[:, :num_modes]
     applied = observation[:, num_modes : 2 * num_modes]
     return residual - applied
+
+
+def _add_observation_noise(
+    state: torch.Tensor,
+    standard_deviation_rad: float,
+    generator: torch.Generator,
+) -> torch.Tensor:
+    if standard_deviation_rad == 0:
+        return state
+    noise = torch.randn(
+        state.shape,
+        generator=generator,
+        device=state.device,
+        dtype=state.dtype,
+    )
+    return state + standard_deviation_rad * noise

@@ -1,0 +1,232 @@
+metadata:
+  stage: S4-D2-R1
+  purpose: one_factor_small_residual_action_revision
+  hypothesis: smaller_physical_residual_range_improves_learning_stability
+  user_authorized_revision: true
+  allow_real_hardware_claims: false
+  allow_prior_trajectory_reuse: false
+  allow_sealed_test_access: false
+  allow_gate_relaxation: false
+  allow_algorithm_change: false
+  allow_reward_change: false
+
+upstream_evidence:
+  s4d2_summary: outputs/s4_residual_sac_v1/summary.json
+  s4d2_summary_sha256: 48c8456c34279d6c69fbb4178142a7aa7ac6f1239ec0fbd67f584f82b85a8096
+  s4d2_config: configs/experiments/s4_residual_sac_v1.yaml
+  s4d2_config_sha256: a533ff884f8bbdb6d146a7273dcf3b8d38743ad31a551fbe2a95995b8b432105
+  s4d2_audit: docs/S4-D2残差SAC训练审计记录.md
+  s4d2_audit_sha256: 9cd91e29e7d5abbaf0d6910671c6ec05e5ce8d940a8e03b39ea3e0736429e8a0
+  diagnostic_summary: outputs/s4_residual_sac_diagnostic_v1/summary.json
+  diagnostic_summary_sha256: 210e6dc8b49021704706cbd0ab99569829938caf7ee83c91b7ee0ca3019811ce
+  diagnostic_source_manifest: outputs/s4_residual_sac_diagnostic_v1/source_manifest.json
+  diagnostic_source_manifest_sha256: 78dcb73826a858ffe01e7735eeb33f1311f9b4979946a7300edaa0ea394a4ac8
+  diagnostic_config: configs/experiments/s4_residual_sac_diagnostic_v1.yaml
+  diagnostic_config_sha256: 10c6098a5cfef889478dcd4d6e023c8b3443e1524c0d28c00afd7074c0c4c98a
+  diagnostic_audit: docs/S4-D2残差SAC失败诊断审计记录.md
+  diagnostic_audit_sha256: 2f5e46fc875c93678fd34d7441ee1e6c12528b25c5e6e6e68a6b4f77c4b1567a
+
+# 除残差物理上限外，以下训练契约与S4-D2 v1保持一致。
+environment_config: configs/environment/s1_taylor_v1.yaml
+environment_config_sha256: 8172a07efb2607544011a9fc959f4ab4fbed9a471de9c0112dd15f1d45e5976a
+hardware_profile_source: configs/experiments/s4_hardware_stress_v1.yaml
+hardware_profile_source_sha256: fb6cb5a3e86fa0445345e47b084722a5c1613d07eab73f596c32afb6c4ce07e8
+
+frozen_controller:
+  id: tracking_conservative
+  kind: tracking_leaky_integrator
+  parameters:
+    gain: 0.25
+    leak: 0.10
+    tracking_gain: 0.50
+    max_request_step_rad: 0.15
+
+policy_observation:
+  history_frames: 4
+  include_oracle_quality_metrics: false
+  fields:
+    - residual_modal_noisy
+    - applied_modal
+    - requested_modal
+    - frozen_baseline_delta
+
+action:
+  num_modes: 10
+  # R1唯一科学变更：原S4-D2为0.05 rad。
+  residual_action_limit_rad: 0.0125
+  final_action_step_limit_rad: 0.15
+  preserve_environment_modal_limit: true
+
+reward:
+  measured_power_weight: 1.0
+  residual_action_weight: 0.01
+  violation_weight: 0.50
+  scientific_metrics_are_separate: true
+
+sac:
+  hidden_size: 256
+  learning_rate: 0.0003
+  gamma: 0.99
+  tau: 0.005
+  initial_alpha: 0.05
+  replay_buffer_size: 500000
+  replay_storage_device: cpu
+  batch_size: 256
+  warmup_transitions: 20000
+  total_transitions_per_seed: 499200
+  updates_per_environment_step: 4
+  validation_interval_transitions: 50000
+  checkpoint_interval_transitions: 100000
+  log_interval_transitions: 2048
+
+policy_seeds:
+  - 5101
+  - 5102
+  - 5103
+
+# 全新R1训练种子；不接触D1、D2、诊断和未来上限实验。
+training_environment_seed_bases:
+  - 2300000
+  - 2320000
+  - 2340000
+training_seed_span_per_policy: 10000
+
+training_physical_conditions:
+  - id: d2_train_frozen
+    regime: frozen_stationary
+    wind_speed_mps: 0.45
+    wind_direction_deg: 15.0
+    slm_delay_frames: 2
+  - id: d2_train_boiling
+    regime: boiling_stationary_wind
+    wind_speed_mps: 0.55
+    wind_direction_deg: 60.0
+    frozen_flow_rho: 0.995
+    slm_delay_frames: 2
+  - id: d2_train_combined
+    regime: boiling_varying_wind_noisy
+    wind_speed_mps: 0.60
+    wind_direction_deg: 75.0
+    frozen_flow_rho: 0.995
+    wind_speed_modulation_fraction: 0.15
+    wind_direction_modulation_deg: 15.0
+    wind_modulation_period_frames: 80
+    wind_modulation_phase_deg: 135.0
+    slm_delay_frames: 2
+
+training_hardware_profile_ids:
+  - nominal
+  - delay_3
+  - settling_050
+  - registration_moderate
+  - registration_severe
+  - combined_moderate
+
+validation_physical_conditions:
+  - id: r1_val_frozen
+    regime: frozen_stationary
+    base_seed: 2400000
+    wind_speed_mps: 0.525
+    wind_direction_deg: 30.0
+    slm_delay_frames: 2
+  - id: r1_val_boiling
+    regime: boiling_stationary_wind
+    base_seed: 2401000
+    wind_speed_mps: 0.625
+    wind_direction_deg: 45.0
+    frozen_flow_rho: 0.995
+    slm_delay_frames: 2
+  - id: r1_val_combined
+    regime: boiling_varying_wind_noisy
+    base_seed: 2402000
+    wind_speed_mps: 0.50
+    wind_direction_deg: 85.0
+    frozen_flow_rho: 0.995
+    wind_speed_modulation_fraction: 0.15
+    wind_direction_modulation_deg: 15.0
+    wind_modulation_period_frames: 80
+    wind_modulation_phase_deg: 270.0
+    slm_delay_frames: 2
+
+interval_validation_profile_ids:
+  - nominal
+  - settling_050
+  - registration_severe
+
+final_validation_profile_ids:
+  - nominal
+  - delay_3
+  - settling_050
+  - registration_moderate
+  - registration_severe
+  - combined_moderate
+
+validation:
+  episodes_per_physical_condition: 16
+  steps: 200
+  primary_metric: power_in_bucket
+  compare_on_identical_episode_seeds: true
+  deterministic_policy: true
+  max_violation_fraction: 0.05
+  proposed_min_relative_power_gain: 0.02
+  min_power_delta_ci95_low: 0.0
+  min_strehl_delta_ci95_low: 0.0
+  max_phase_rmse_delta_ci95_high: 0.0
+
+# 仅为共享训练引擎保留字段；保护范围在下方单独验证。
+reserved_s4d3_seed_base: 2100000
+reserved_oracle_seed_base: 2500000
+
+protected_seed_ranges:
+  - id: s4d1_s4d2_s4d3_and_diagnostic
+    start_inclusive: 1600000
+    end_exclusive: 2300000
+
+quick:
+  total_transitions_per_seed: 512
+  warmup_transitions: 128
+  replay_buffer_size: 2048
+  batch_size: 64
+  updates_per_environment_step: 1
+  validation_interval_transitions: 256
+  checkpoint_interval_transitions: 512
+  log_interval_transitions: 64
+  environment_batch_size: 4
+  episode_length: 32
+  validation_steps: 16
+  policy_seeds:
+    - 9501
+  training_environment_seed_bases:
+    - 2460000
+  training_hardware_profile_ids:
+    - nominal
+    - settling_050
+  validation_hardware_profile_ids:
+    - nominal
+  validation_physical_conditions:
+    - id: r1_quick_val
+      regime: boiling_stationary_wind
+      base_seed: 2475000
+      wind_speed_mps: 0.50
+      wind_direction_deg: 45.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+
+outputs:
+  directory: outputs/s4_residual_sac_r1_v1
+  quick_directory: outputs/s4_residual_sac_r1_v1_quick
+
+tracked_source_files:
+  - scripts/train_s4_r1_residual_sac.py
+  - src/runtime.py
+  - src/training_progress.py
+  - src/rl/residual_control.py
+  - src/rl/residual_sac.py
+  - src/rl/s4_training.py
+  - src/rl/s4_r1_training.py
+  - src/simulation/config.py
+  - src/simulation/controllers.py
+  - src/simulation/env.py
+  - src/simulation/hardware_effects.py
+  - src/simulation/robust_control.py
+  - src/simulation/turbulence.py

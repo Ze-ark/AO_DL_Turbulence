@@ -1,0 +1,147 @@
+metadata:
+  stage: S4-D2-R1-UB
+  purpose: bounded_truth_preview_oracle_capacity_diagnostic
+  hypothesis: the_r1_residual_action_space_has_at_least_two_percent_usable_capacity
+  allow_training: false
+  allow_optimizer_updates: false
+  allow_checkpoint_updates: false
+  allow_old_trajectory_access: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+  allow_simulator_truth_access: true
+
+upstream_r1:
+  summary: outputs/s4_residual_sac_r1_v1/summary.json
+  summary_sha256: e11988fc3f4d8fd3460fd98345c78854fb2ebf75aaaebfd0f41898592fe1f0c1
+  source_manifest: outputs/s4_residual_sac_r1_v1/source_manifest.json
+  source_manifest_sha256: 880a4ad8772542ebab52538a9c091509fdf58320b9b0fb710cc7952ef60f0002
+  experiment_config: configs/experiments/s4_residual_sac_r1_v1.yaml
+  experiment_config_sha256: 04b7fb21b2e361d3442ffb209aaa9a2e24a784bd73b0a662d6947a957baba300
+  audit_record: docs/S4-D2-R1训练审计记录.md
+  audit_record_sha256: 26bf92563b99e078f7fed87c81c6c2bbe1f0f8259ba6642a4d410984eaabb716
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+environment_config_sha256: 8172a07efb2607544011a9fc959f4ab4fbed9a471de9c0112dd15f1d45e5976a
+hardware_profile_source: configs/experiments/s4_hardware_stress_v1.yaml
+hardware_profile_source_sha256: fb6cb5a3e86fa0445345e47b084722a5c1613d07eab73f596c32afb6c4ce07e8
+
+# 与R1完全相同的冻结传统控制器和动作限制。
+frozen_controller:
+  id: tracking_conservative
+  kind: tracking_leaky_integrator
+  parameters:
+    gain: 0.25
+    leak: 0.10
+    tracking_gain: 0.50
+    max_request_step_rad: 0.15
+
+policy_observation:
+  history_frames: 4
+  include_oracle_quality_metrics: false
+  fields:
+    - residual_modal_noisy
+    - applied_modal
+    - requested_modal
+    - frozen_baseline_delta
+
+action:
+  num_modes: 10
+  residual_action_limit_rad: 0.0125
+  final_action_step_limit_rad: 0.15
+  preserve_environment_modal_limit: true
+
+oracle:
+  # 每个候选都知道未来仿真真值；逐回合包络再事后选择桶内功率最高者。
+  preview_horizons_frames: [0, 1, 2, 3, 4, 5, 6]
+  selection_metric: power_in_bucket
+  per_episode_hindsight_envelope: true
+  compensate_phase_scale: true
+  truth_alignment_tolerance: 1.0e-6
+
+evaluation:
+  steps: 200
+  episodes_per_physical_condition: 16
+  profile_ids:
+    - nominal
+    - delay_3
+    - settling_050
+    - registration_moderate
+    - registration_severe
+    - combined_moderate
+  # 物理条件与R1开发验证相同，只换成预留的全新oracle种子。
+  physical_conditions:
+    - id: ub_frozen
+      regime: frozen_stationary
+      base_seed: 2500000
+      wind_speed_mps: 0.525
+      wind_direction_deg: 30.0
+      slm_delay_frames: 2
+    - id: ub_boiling
+      regime: boiling_stationary_wind
+      base_seed: 2501000
+      wind_speed_mps: 0.625
+      wind_direction_deg: 45.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+    - id: ub_combined
+      regime: boiling_varying_wind_noisy
+      base_seed: 2502000
+      wind_speed_mps: 0.50
+      wind_direction_deg: 85.0
+      frozen_flow_rho: 0.995
+      wind_speed_modulation_fraction: 0.15
+      wind_direction_modulation_deg: 15.0
+      wind_modulation_period_frames: 80
+      wind_modulation_phase_deg: 270.0
+      slm_delay_frames: 2
+
+# 原2%门槛和所有辅助科学指标保持不变。
+gate:
+  proposed_min_relative_power_gain: 0.02
+  min_power_delta_ci95_low: 0.0
+  min_strehl_delta_ci95_low: 0.0
+  max_phase_rmse_delta_ci95_high: 0.0
+  max_violation_fraction: 0.05
+
+protected_seed_ranges:
+  - id: all_prior_s0_through_r1_work
+    start_inclusive: 0
+    end_exclusive: 2500000
+
+reserved_r2_seed_base: 2600000
+
+quick:
+  steps: 16
+  batch_size: 2
+  preview_horizons_frames: [0, 2, 4]
+  profile_ids:
+    - nominal
+  physical_conditions:
+    - id: ub_quick
+      regime: boiling_stationary_wind
+      base_seed: 2590000
+      wind_speed_mps: 0.50
+      wind_direction_deg: 45.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+
+outputs:
+  directory: outputs/s4_r1_oracle_bound_v1
+  quick_directory: outputs/s4_r1_oracle_bound_v1_quick
+
+tracked_source_files:
+  - scripts/run_s4_r1_oracle_bound.py
+  - src/runtime.py
+  - src/training_progress.py
+  - src/rl/residual_control.py
+  - src/rl/s4_training.py
+  - src/rl/s4_oracle_bound.py
+  - src/simulation/config.py
+  - src/simulation/controllers.py
+  - src/simulation/env.py
+  - src/simulation/hardware_effects.py
+  - src/simulation/modes.py
+  - src/simulation/optics.py
+  - src/simulation/robust_control.py
+  - src/simulation/slm.py
+  - src/simulation/turbulence.py

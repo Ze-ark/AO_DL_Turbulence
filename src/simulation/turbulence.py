@@ -7,6 +7,32 @@ import math
 import torch
 
 
+def modulated_wind_parameters(
+    base_speed_mps: float,
+    base_direction_deg: float,
+    step: int,
+    *,
+    speed_modulation_fraction: float = 0.0,
+    direction_modulation_deg: float = 0.0,
+    period_frames: int = 0,
+    phase_deg: float = 0.0,
+) -> tuple[float, float]:
+    """返回当前帧风速和风向；零调制时严格保持原S1行为。"""
+    if base_speed_mps < 0 or step < 0:
+        raise ValueError("base_speed_mps and step must be non-negative")
+    if not 0 <= speed_modulation_fraction <= 1 or direction_modulation_deg < 0:
+        raise ValueError("wind modulation amplitudes are invalid")
+    enabled = speed_modulation_fraction > 0 or direction_modulation_deg > 0
+    if enabled and period_frames < 2:
+        raise ValueError("period_frames must be at least 2 when modulation is enabled")
+    if not enabled:
+        return base_speed_mps, base_direction_deg
+    angle = 2 * math.pi * step / period_frames + math.radians(phase_deg)
+    speed = base_speed_mps * (1 + speed_modulation_fraction * math.sin(angle))
+    direction = base_direction_deg + direction_modulation_deg * math.cos(angle)
+    return speed, direction
+
+
 def periodic_fourier_shift(
     field: torch.Tensor,
     shift_x_pixels: float | torch.Tensor,

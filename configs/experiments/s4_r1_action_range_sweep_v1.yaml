@@ -1,0 +1,150 @@
+metadata:
+  stage: S4-D2-R1-ACTION-RANGE
+  purpose: nonlearning_oracle_residual_action_range_sweep
+  hypothesis: a_larger_but_still_bounded_residual_action_range_can_cross_the_original_two_percent_gate
+  allow_training: false
+  allow_optimizer_updates: false
+  allow_checkpoint_updates: false
+  allow_old_trajectory_access: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+  allow_simulator_truth_access: true
+
+upstream_oracle:
+  summary: outputs/s4_r1_oracle_bound_v1/summary.json
+  summary_sha256: c7b686776c3534401da7c90e766c2e3b1ca65204b4a8f74af09b885850a5ebc2
+  source_manifest: outputs/s4_r1_oracle_bound_v1/source_manifest.json
+  source_manifest_sha256: 464da8243d827b4a09f5368e5724e2d3a2c19c5f8287fa7d997c38aff159a4c7
+  experiment_config: configs/experiments/s4_r1_oracle_bound_v1.yaml
+  experiment_config_sha256: 63c449c6afcad61c21608d593808b58c67ef37dbbcd68ada360aa60a8f28b82c
+  audit_record: docs/S4-D2-R1理想控制上限审计记录.md
+  audit_record_sha256: 7d69a448e21116c55eb435588b453f13357a547a0201f839acadcd252779f991
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+environment_config_sha256: 8172a07efb2607544011a9fc959f4ab4fbed9a471de9c0112dd15f1d45e5976a
+hardware_profile_source: configs/experiments/s4_hardware_stress_v1.yaml
+hardware_profile_source_sha256: fb6cb5a3e86fa0445345e47b084722a5c1613d07eab73f596c32afb6c4ce07e8
+
+# 传统控制器、观测和最终安全步长与正式理想上限实验完全相同。
+frozen_controller:
+  id: tracking_conservative
+  kind: tracking_leaky_integrator
+  parameters:
+    gain: 0.25
+    leak: 0.10
+    tracking_gain: 0.50
+    max_request_step_rad: 0.15
+
+policy_observation:
+  history_frames: 4
+  include_oracle_quality_metrics: false
+  fields:
+    - residual_modal_noisy
+    - applied_modal
+    - requested_modal
+    - frozen_baseline_delta
+
+action:
+  num_modes: 10
+  # 同时包含R1的0.0125 rad与原D2的0.05 rad两个锚点。
+  residual_action_limits_rad: [0.0125, 0.01875, 0.025, 0.03125, 0.0375, 0.05]
+  final_action_step_limit_rad: 0.15
+  preserve_environment_modal_limit: true
+
+oracle:
+  preview_horizons_frames: [0, 1, 2, 3, 4, 5, 6]
+  selection_metric: power_in_bucket
+  per_episode_hindsight_envelope: true
+  nested_cumulative_limit_envelope: true
+  compensate_phase_scale: true
+  truth_alignment_tolerance: 1.0e-6
+
+evaluation:
+  steps: 200
+  episodes_per_physical_condition: 16
+  profile_ids:
+    - nominal
+    - delay_3
+    - settling_050
+    - registration_moderate
+    - registration_severe
+    - combined_moderate
+  # 物理条件不变，只换成未被此前实验使用的新种子。
+  physical_conditions:
+    - id: range_frozen
+      regime: frozen_stationary
+      base_seed: 2600000
+      wind_speed_mps: 0.525
+      wind_direction_deg: 30.0
+      slm_delay_frames: 2
+    - id: range_boiling
+      regime: boiling_stationary_wind
+      base_seed: 2601000
+      wind_speed_mps: 0.625
+      wind_direction_deg: 45.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+    - id: range_combined
+      regime: boiling_varying_wind_noisy
+      base_seed: 2602000
+      wind_speed_mps: 0.50
+      wind_direction_deg: 85.0
+      frozen_flow_rho: 0.995
+      wind_speed_modulation_fraction: 0.15
+      wind_direction_modulation_deg: 15.0
+      wind_modulation_period_frames: 80
+      wind_modulation_phase_deg: 270.0
+      slm_delay_frames: 2
+
+# 保留原R1完整门槛，不用只看2%均值的弱化规则。
+gate:
+  proposed_min_relative_power_gain: 0.02
+  min_power_delta_ci95_low: 0.0
+  min_strehl_delta_ci95_low: 0.0
+  max_phase_rmse_delta_ci95_high: 0.0
+  max_violation_fraction: 0.05
+
+protected_seed_ranges:
+  - id: all_prior_s0_through_oracle_bound
+    start_inclusive: 0
+    end_exclusive: 2600000
+
+reserved_future_algorithm_seed_base: 2700000
+
+quick:
+  steps: 16
+  batch_size: 2
+  residual_action_limits_rad: [0.0125, 0.025, 0.05]
+  preview_horizons_frames: [0, 2, 4]
+  profile_ids:
+    - nominal
+  physical_conditions:
+    - id: range_quick
+      regime: boiling_stationary_wind
+      base_seed: 2690000
+      wind_speed_mps: 0.50
+      wind_direction_deg: 45.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+
+outputs:
+  directory: outputs/s4_r1_action_range_sweep_v1
+  quick_directory: outputs/s4_r1_action_range_sweep_v1_quick
+
+tracked_source_files:
+  - scripts/run_s4_r1_action_range_sweep.py
+  - src/runtime.py
+  - src/training_progress.py
+  - src/rl/residual_control.py
+  - src/rl/s4_training.py
+  - src/rl/s4_oracle_bound.py
+  - src/rl/s4_action_range_sweep.py
+  - src/simulation/config.py
+  - src/simulation/controllers.py
+  - src/simulation/env.py
+  - src/simulation/hardware_effects.py
+  - src/simulation/modes.py
+  - src/simulation/optics.py
+  - src/simulation/robust_control.py
+  - src/simulation/slm.py
+  - src/simulation/turbulence.py

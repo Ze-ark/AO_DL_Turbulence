@@ -1,0 +1,56 @@
+metadata:
+  stage: S3
+  purpose: compare_converged_gru_128_and_256
+  scientific_gate: exploratory_convergence_capacity_followup
+  allow_scientific_claims: false
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+upstream_diagnostic_summary: outputs/s3_data_scaling_diagnostic_v1/summary.json
+protected_original_experiment: configs/experiments/s3_dynamics_v1.yaml
+
+dataset:
+  # 复用已经生成并完成哈希记录的开发数据，不重新生成，也不读取原S3封存测试。
+  h5: data/processed/s3_data_scaling_pool_v1.h5
+  sequence_length: 8
+  num_modes: 10
+  metric_scale_source: full_train_pool_history
+
+experiment:
+  episode_scales: [192, 384]
+  hidden_sizes: [128, 256]
+  initialization_seeds: [20260811, 20260812, 20260813]
+
+model:
+  num_layers: 2
+  dropout: 0.10
+
+training:
+  # 原诊断在3600步附近仍在下降；本次把3600设为最少步数，并允许训练到10800步。
+  min_optimizer_steps: 3600
+  max_optimizer_steps: 10800
+  validation_interval_steps: 120
+  batch_size: 256
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+  early_stopping_patience_checks: 12
+  early_stopping_relative_min_delta: 0.002
+  scheduler_patience_checks: 5
+  scheduler_factor: 0.5
+  minimum_learning_rate: 0.00001
+  final_window_checks: 5
+  max_final_window_improvement: 0.01
+
+baseline:
+  kind: ridge_autoregression_same_history
+  ridge_alpha: 0.001
+
+classification:
+  # 256维必须在192和384回合下都至少改善5%，才支持“更大模型有用”。
+  min_larger_model_rmse_improvement: 0.05
+  # 384回合必须对128和256维都至少改善10%，才支持“更多数据有用”。
+  min_more_data_rmse_improvement: 0.10
+
+outputs:
+  checkpoint_directory: checkpoints/s3_convergence_capacity_v1
+  directory: outputs/s3_convergence_capacity_v1

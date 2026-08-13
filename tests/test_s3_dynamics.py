@@ -79,6 +79,52 @@ def test_training_normalization_has_one_value_per_mode():
     assert torch.all(scale > 0)
 
 
+def test_prediction_horizon_changes_target_steps_without_leaking_future_history():
+    condition = [DynamicsCondition("moving", 0.2, 25.0, 95)]
+    data = generate_temporal_dynamics_data(
+        _config(episode_length=7),
+        "cpu",
+        condition,
+        sequence_length=3,
+        frames_per_episode=5,
+        random_action_std_rad=0,
+        prediction_horizon_frames=2,
+    )
+
+    assert data.histories.shape == (4, 3, 2)
+    assert data.target_step.tolist() == [4, 5, 4, 5]
+
+
+def test_observation_noise_changes_only_histories_not_true_targets():
+    clean = generate_temporal_dynamics_data(
+        _config(),
+        "cpu",
+        [DynamicsCondition("clean", 0.1, 10.0, 96)],
+        sequence_length=2,
+        frames_per_episode=4,
+        random_action_std_rad=0,
+    )
+    noisy = generate_temporal_dynamics_data(
+        _config(),
+        "cpu",
+        [
+            DynamicsCondition(
+                "noisy",
+                0.1,
+                10.0,
+                96,
+                observation_noise_std_rad=0.1,
+            )
+        ],
+        sequence_length=2,
+        frames_per_episode=4,
+        random_action_std_rad=0,
+    )
+
+    assert torch.equal(clean.targets, noisy.targets)
+    assert not torch.equal(clean.histories, noisy.histories)
+
+
 def test_gru_model_returns_one_modal_vector_per_sequence():
     model = GRUModalDynamics(num_modes=3, hidden_size=8, num_layers=2, dropout=0.1)
 

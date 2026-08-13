@@ -24,6 +24,12 @@ environment:
   # 1.0 是严格泰勒冻结流；后续实验再降低它，加入湍流形变。
   frozen_flow_rho: 1.0
 
+  # 默认关闭变风，确保S1和原S3结果不变；S3-B会按条件单独覆盖这些参数。
+  wind_speed_modulation_fraction: 0.0
+  wind_direction_modulation_deg: 0.0
+  wind_modulation_period_frames: 0
+  wind_modulation_phase_deg: 0.0
+
   # S1 暂时只控制十个低阶模态，不直接输出 2048×2048 SLM 像素。
   num_modes: 10
   modal_limit_rad: 3.0

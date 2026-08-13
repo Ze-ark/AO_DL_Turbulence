@@ -5,8 +5,14 @@ from __future__ import annotations
 import torch
 
 from src.simulation.config import S1EnvConfig
+from src.simulation.hardware_effects import (
+    HardwareAwareSlmModel,
+    HardwareEffectsConfig,
+    noisy_power_measurement,
+)
 from src.simulation.modes import (
     make_low_order_zernike_basis,
+    make_pupil_mask,
     project_phase_to_modes,
     synthesize_phase,
 )
@@ -14,6 +20,7 @@ from src.simulation.optics import focal_plane_metrics
 from src.simulation.slm import TorchSlmModel
 from src.simulation.turbulence import (
     advance_taylor_frozen_flow,
+    modulated_wind_parameters,
     von_karman_phase_screens,
     wind_displacement,
 )
@@ -22,29 +29,62 @@ from src.simulation.turbulence import (
 class AdaptiveOpticsEnv:
     """泰勒冻结流、低维动作和焦面奖励组成的批量环境。"""
 
-    def __init__(self, config: S1EnvConfig, device: torch.device | str) -> None:
+    def __init__(
+        self,
+        config: S1EnvConfig,
+        device: torch.device | str,
+        hardware_effects: HardwareEffectsConfig | None = None,
+        basis_override: torch.Tensor | None = None,
+    ) -> None:
         config.validate()
         self.config = config
         self.device = torch.device(device)
         self.dtype = torch.float32
-        self.basis, self.pupil = make_low_order_zernike_basis(
-            config.grid_size,
-            config.pupil_radius_fraction,
-            config.num_modes,
-            self.device,
-            self.dtype,
-        )
-        self.slm = TorchSlmModel(
+        if basis_override is None:
+            self.basis, self.pupil = make_low_order_zernike_basis(
+                config.grid_size,
+                config.pupil_radius_fraction,
+                config.num_modes,
+                self.device,
+                self.dtype,
+            )
+        else:
+            expected = (config.num_modes, config.grid_size, config.grid_size)
+            if basis_override.shape != expected:
+                raise ValueError(f"basis_override must have shape {expected}")
+            self.basis = basis_override.to(self.device, self.dtype).clone()
+            self.pupil = make_pupil_mask(
+                config.grid_size,
+                config.pupil_radius_fraction,
+                self.device,
+                self.dtype,
+            )
+            if not torch.isfinite(self.basis).all():
+                raise ValueError("basis_override must contain only finite values")
+            outside = self.basis[:, ~self.pupil]
+            if outside.numel() and float(outside.abs().max()) > 1e-6:
+                raise ValueError("basis_override must be zero outside the pupil")
+        self.hardware_effects = hardware_effects or HardwareEffectsConfig()
+        self.hardware_effects.validate()
+        slm_arguments = (
             config.slm_phase_min_rad,
             config.slm_phase_max_rad,
             config.slm_max_delta_rad,
             config.slm_quantization_levels,
             config.slm_delay_frames,
         )
+        if self.hardware_effects.is_nominal:
+            self.slm = TorchSlmModel(*slm_arguments)
+        else:
+            self.slm = HardwareAwareSlmModel(
+                *slm_arguments,
+                effects=self.hardware_effects,
+            )
         self.generators: list[torch.Generator] = []
         self.episode_seeds: torch.Tensor | None = None
         self.turbulence_phase: torch.Tensor | None = None
         self.requested_modal: torch.Tensor | None = None
+        self.measurement_generator: torch.Generator | None = None
         self.step_count = 0
 
     def reset(
@@ -60,6 +100,9 @@ class AdaptiveOpticsEnv:
             for one_seed in seeds
         ]
         self.episode_seeds = torch.tensor(seeds, device=self.device, dtype=torch.int64)
+        self.measurement_generator = torch.Generator(device=self.device).manual_seed(
+            actual_seed + 60_000_000
+        )
         if turbulence_phase is None:
             self.turbulence_phase = self._new_phase_screens()
         else:
@@ -105,6 +148,13 @@ class AdaptiveOpticsEnv:
         requested_phase = synthesize_phase(self.requested_modal, self.basis)
         applied_phase, slm_info = self.slm.step(requested_phase)
         current_metrics = self._metrics(applied_phase)
+        if self.measurement_generator is None:
+            raise RuntimeError("measurement generator is unavailable")
+        measured_power = noisy_power_measurement(
+            current_metrics["power_in_bucket"],
+            self.hardware_effects.power_noise_relative_std,
+            self.measurement_generator,
+        )
         action_cost = action_delta.square().mean(dim=-1)
         violation = torch.maximum(
             modal_violation,
@@ -131,11 +181,26 @@ class AdaptiveOpticsEnv:
             **next_info,
             "reward_strehl": current_metrics["strehl"],
             "reward_power_in_bucket": current_metrics["power_in_bucket"],
+            "measured_power_in_bucket": measured_power,
             "reward_phase_rmse": current_metrics["phase_rmse"],
             "action_cost": action_cost,
             "violation_fraction": violation,
             "requested_modal": self.requested_modal.clone(),
             "applied_modal": project_phase_to_modes(applied_phase, self.basis, self.pupil),
+            "delayed_modal": project_phase_to_modes(
+                slm_info["delayed_command"], self.basis, self.pupil
+            ),
+            "registered_modal": project_phase_to_modes(
+                slm_info.get("registered_command", slm_info["delayed_command"]),
+                self.basis,
+                self.pupil,
+            ),
+            "saturated_fraction": slm_info["saturated_fraction"],
+            "slew_limited_fraction": slm_info["slew_limited_fraction"],
+            "settling_limited_fraction": slm_info.get(
+                "settling_limited_fraction",
+                torch.zeros_like(slm_info["slew_limited_fraction"]),
+            ),
         }
         return observation, reward, terminated, truncated, info
 
@@ -153,6 +218,19 @@ class AdaptiveOpticsEnv:
             turbulence + ideal_correction,
             self.pupil,
             self.config.bucket_radius_pixels,
+        )
+
+    def oracle_disturbance_modal(self) -> torch.Tensor:
+        """直接返回当前湍流的模态真值，仅用于不可部署的仿真诊断。
+
+        不能用“残余模态减已施加模态”代替本接口：高维动作较大时，两个
+        float32 数值相减会产生足以触发严格真值对齐门槛的消差误差。
+        """
+        self._require_reset()
+        return project_phase_to_modes(
+            self._current_turbulence_window(),
+            self.basis,
+            self.pupil,
         )
 
     def ideal_wavefront_observation(self) -> torch.Tensor:
@@ -194,9 +272,18 @@ class AdaptiveOpticsEnv:
 
     def _advance_turbulence(self) -> None:
         self._require_reset()
-        shift_x, shift_y = wind_displacement(
+        wind_speed_mps, wind_direction_deg = modulated_wind_parameters(
             self.config.wind_speed_mps,
             self.config.wind_direction_deg,
+            self.step_count,
+            speed_modulation_fraction=self.config.wind_speed_modulation_fraction,
+            direction_modulation_deg=self.config.wind_direction_modulation_deg,
+            period_frames=self.config.wind_modulation_period_frames,
+            phase_deg=self.config.wind_modulation_phase_deg,
+        )
+        shift_x, shift_y = wind_displacement(
+            wind_speed_mps,
+            wind_direction_deg,
             self.config.dt_s,
         )
         innovation = None

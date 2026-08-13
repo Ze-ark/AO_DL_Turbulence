@@ -1,0 +1,73 @@
+metadata:
+  stage: S4-A
+  purpose: compare_linear_closed_loop_controllers_under_complex_dynamics
+  scientific_gate: development_only_before_s4_sealed_test
+  allow_scientific_claims: false
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+upstream_s3b_summary: outputs/s3_complex_dynamics_v1/summary.json
+upstream_s3b_dataset: data/processed/s3_complex_dynamics_v1.h5
+
+ridge_model:
+  # 只用S3-B训练组拟合，不读取S3-B验证组来训练控制器。
+  sequence_length: 8
+  prediction_horizon_frames: 2
+  ridge_alpha: 0.001
+  warmup_velocity_gain: 1.0
+
+evaluation:
+  steps: 200
+  primary_metric: power_in_bucket
+  observation_kind: noisy_oracle_modal_features
+  # 所有条件统一为2帧SLM延迟，与S3-B岭回归的预测提前量一致。
+  common_slm_delay_frames: 2
+
+tuning:
+  leaky_integrator:
+    gains: [0.25, 0.35, 0.45]
+    leaks: [0.05, 0.10]
+  linear_predictor:
+    velocity_gains: [0.5, 1.0, 1.5]
+
+conditions:
+  # 调参条件只用于选择积分器和两帧差分预测器参数。
+  tuning_conditions:
+    - {id: tune_frozen_01, regime: frozen_stationary, base_seed: 1100000, wind_speed_mps: 0.35, wind_direction_deg: 10.0, slm_delay_frames: 2}
+    - {id: tune_frozen_02, regime: frozen_stationary, base_seed: 1101000, wind_speed_mps: 0.55, wind_direction_deg: 60.0, slm_delay_frames: 2}
+    - {id: tune_boiling_01, regime: boiling_stationary_wind, base_seed: 1102000, wind_speed_mps: 0.40, wind_direction_deg: 20.0, frozen_flow_rho: 0.995, observation_noise_std_rad: 0.01, slm_delay_frames: 2}
+    - {id: tune_boiling_02, regime: boiling_stationary_wind, base_seed: 1103000, wind_speed_mps: 0.60, wind_direction_deg: 65.0, frozen_flow_rho: 0.995, observation_noise_std_rad: 0.01, slm_delay_frames: 2}
+    - {id: tune_combined_01, regime: boiling_varying_wind_noisy, base_seed: 1104000, wind_speed_mps: 0.45, wind_direction_deg: 35.0, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 30.0, observation_noise_std_rad: 0.02, slm_delay_frames: 2}
+    - {id: tune_combined_02, regime: boiling_varying_wind_noisy, base_seed: 1105000, wind_speed_mps: 0.575, wind_direction_deg: 75.0, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 150.0, observation_noise_std_rad: 0.02, slm_delay_frames: 2}
+
+  # 开发比较条件与调参条件完全隔离；本轮门槛只使用这里的回合。
+  development_conditions:
+    - {id: dev_frozen_01, regime: frozen_stationary, base_seed: 1200000, wind_speed_mps: 0.40, wind_direction_deg: 25.0, slm_delay_frames: 2}
+    - {id: dev_frozen_02, regime: frozen_stationary, base_seed: 1201000, wind_speed_mps: 0.60, wind_direction_deg: 70.0, slm_delay_frames: 2}
+    - {id: dev_boiling_01, regime: boiling_stationary_wind, base_seed: 1202000, wind_speed_mps: 0.375, wind_direction_deg: 15.0, frozen_flow_rho: 0.995, observation_noise_std_rad: 0.01, slm_delay_frames: 2}
+    - {id: dev_boiling_02, regime: boiling_stationary_wind, base_seed: 1203000, wind_speed_mps: 0.575, wind_direction_deg: 55.0, frozen_flow_rho: 0.995, observation_noise_std_rad: 0.01, slm_delay_frames: 2}
+    - {id: dev_combined_01, regime: boiling_varying_wind_noisy, base_seed: 1204000, wind_speed_mps: 0.425, wind_direction_deg: 40.0, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 60.0, observation_noise_std_rad: 0.02, slm_delay_frames: 2}
+    - {id: dev_combined_02, regime: boiling_varying_wind_noisy, base_seed: 1205000, wind_speed_mps: 0.575, wind_direction_deg: 80.0, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 210.0, observation_noise_std_rad: 0.02, slm_delay_frames: 2}
+
+  # 只登记，不由本脚本生成或评估。
+  sealed_test_conditions:
+    - {id: test_frozen_01, regime: frozen_stationary, base_seed: 1300000, wind_speed_mps: 0.425, wind_direction_deg: 5.0, slm_delay_frames: 2}
+    - {id: test_frozen_02, regime: frozen_stationary, base_seed: 1301000, wind_speed_mps: 0.625, wind_direction_deg: 50.0, slm_delay_frames: 2}
+    - {id: test_boiling_01, regime: boiling_stationary_wind, base_seed: 1302000, wind_speed_mps: 0.475, wind_direction_deg: 30.0, frozen_flow_rho: 0.995, observation_noise_std_rad: 0.01, slm_delay_frames: 2}
+    - {id: test_boiling_02, regime: boiling_stationary_wind, base_seed: 1303000, wind_speed_mps: 0.625, wind_direction_deg: 85.0, frozen_flow_rho: 0.995, observation_noise_std_rad: 0.01, slm_delay_frames: 2}
+    - {id: test_combined_01, regime: boiling_varying_wind_noisy, base_seed: 1304000, wind_speed_mps: 0.475, wind_direction_deg: 20.0, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 120.0, observation_noise_std_rad: 0.02, slm_delay_frames: 2}
+    - {id: test_combined_02, regime: boiling_varying_wind_noisy, base_seed: 1305000, wind_speed_mps: 0.625, wind_direction_deg: 65.0, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 300.0, observation_noise_std_rad: 0.02, slm_delay_frames: 2}
+
+  smoke_condition:
+    {id: smoke_combined, regime: boiling_varying_wind_noisy, base_seed: 1900000, wind_speed_mps: 0.40, wind_direction_deg: 30.0, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.10, wind_direction_modulation_deg: 10.0, wind_modulation_period_frames: 20, wind_modulation_phase_deg: 0.0, observation_noise_std_rad: 0.02, slm_delay_frames: 2}
+
+gate:
+  min_power_delta_ci95_low: 0.0
+  min_strehl_delta_ci95_low: 0.0
+  max_phase_rmse_delta_ci95_high: 0.0
+  max_violation_fraction: 0.05
+  require_every_condition_power_positive: true
+
+outputs:
+  directory: outputs/s4_linear_robustness_v1
+  ridge_checkpoint: checkpoints/s4_pooled_ridge_v1.pt
+  export_development_trajectories: true

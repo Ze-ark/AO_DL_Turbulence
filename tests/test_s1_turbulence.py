@@ -4,10 +4,33 @@ import torch
 
 from src.simulation.turbulence import (
     advance_taylor_frozen_flow,
+    modulated_wind_parameters,
     phase_structure_function,
     periodic_fourier_shift,
     von_karman_phase_screens,
 )
+
+
+def test_zero_wind_modulation_preserves_stationary_parameters():
+    speed, direction = modulated_wind_parameters(0.5, 30.0, 17)
+
+    assert speed == 0.5
+    assert direction == 30.0
+
+
+def test_wind_modulation_uses_sine_speed_and_cosine_direction():
+    speed, direction = modulated_wind_parameters(
+        0.5,
+        30.0,
+        0,
+        speed_modulation_fraction=0.2,
+        direction_modulation_deg=10.0,
+        period_frames=20,
+        phase_deg=0.0,
+    )
+
+    assert speed == 0.5
+    assert direction == 40.0
 
 
 def test_integer_fourier_shift_matches_periodic_roll():

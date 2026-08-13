@@ -11,7 +11,7 @@
   - `phase3-final-v1.1`
   - `dual_slm_h0_h2_plan_v1`
 - Literature Status: `ANALYZED`（已完成 Phase 2 与 32 项来源综合，但精确新颖性仍需投稿前复检）
-- Experiment Status: `S0—S2 VERIFIED；S3 ORIGINAL GATE FAIL / DATA SCALING DIAGNOSTIC READY；S4—S5 NOT RUN`
+- Experiment Status: `S0—S2 VERIFIED；S3 ORIGINAL AND S3-B GATES FAIL；S4-A DEVELOPMENT PASS；S4-B SEALED PASS AND ANALYZED；S4-C0 ANALYZED FAIL；S4-D0 ANALYZED PASS；S4-D1 READY；S5 NOT RUN`
 
 > 本文档是修订后的实验设计，不是结果报告。现有静态模型、真实复光场推理和未来动态 RL 必须分开表述。
 
@@ -58,7 +58,11 @@
 
 当前可诚实表述为：
 
-> 已完成静态复光场上的监督式相位回归原型和真实无标签复光场推理，并完成双 SLM 实验规划；尚未完成动态仿真、RL 训练或真实闭环验证。
+> 已完成静态复光场监督原型、真实无标签复光场推理、S1动态环境、S2传统基线，以及原S3和S3-B多帧GRU开发门槛。复杂动态下的GRU仍未超过同历史岭回归；S4-A、S4-B和S4-D0均已完成并通过审计，但RL仍需等待S4-D1未见种子验证。
+
+> 2026-08-04状态更新：S4-A正式开发比较已完成并通过审计；S4-B唯一一次封存验证也已完成并通过，冻结泄漏积分器的桶内功率平均相对提高23.38%，六个未见条件方向一致。结果仍是纯仿真，不是RL或真实SLM闭环。
+
+> 2026-08-04第二次状态更新：S4-D0冻结 `tracking_conservative`。开发种子上50%慢响应违规率由8.34%降至0.79%，严重配准相对不校正增益达到17.39%。该结果存在开发选型偏差，必须通过S4-D1后才能作为残差SAC的冻结传统基线。
 
 ## 3. S0：物理与统计 Gate 0
 
@@ -323,8 +327,10 @@ RL 值得继续的条件：主要指标改进超过预注册阈值，置信区�
 
 ## 12. 当前 Gate
 
-- Current Stage: 纯仿真 `S3 DATA SCALING DIAGNOSTIC READY FOR USER TRAINING`
-- Active Gate: 多帧非线性动力学模型能否在未见条件下稳定超过线性预测器
+- Current Stage: 纯仿真 `S4-D0 ANALYZED PASS / S4-D1 READY FOR ONE-TIME USER VALIDATION`
+- Completed Gate: S4-D0的4个候选均通过6个必过档位；按最差档位功率增益冻结 `tracking_conservative`，S4-D0不得重跑
+- Active Gate: 参数完全冻结的 `tracking_conservative` 能否在96个新回合与新物理参数上保持全部6个档位PASS，同时重复慢响应安全改善和严重配准增量功率改善
+- S4-C0 Status: 正式运行与只读审计完成；14/16个必过档位PASS，总门槛FAIL；102个轨迹和15个源码哈希全部匹配
 - Parallel Hardware Stage: `H0` 设备建档，可与 S0 同时进行
-- Experiment Status: S1核心已验证；S2最终比较已复现；原S3 GRU在96个验证回合上输给同历史线性岭回归；原封存未打开；学习曲线诊断代码已建立但尚未运行
-- Next Mandatory Step: 用户在IDE执行S3数据量/容量诊断，助手读取结果后判断失败是否由数据不足或模型过大造成；诊断本身不授权打开封存测试或训练RL
+- Experiment Status: S1核心已验证；S2最终比较已复现；原S3 GRU输给同历史岭回归；数据量和容量复查排除了简单训练不足解释；S3-B三次初始化、六个验证条件均未超过强岭回归；S4-D0正式运行和哈希审计PASS；RL仍未建立
+- Next Mandatory Step: 用户在IDE显式运行一次 `scripts/run_s4_robust_controller_validation.py --acknowledge-unseen-validation`；完成后只读审计，不允许重新选型、调参、重跑、启动RL或发送真实SLM动作

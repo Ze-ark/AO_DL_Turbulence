@@ -1,0 +1,213 @@
+metadata:
+  stage: S4-D2-R2-CLOSED-LOOP-SHIFT
+  purpose: diagnose_teacher_trajectory_to_student_closed_loop_distribution_shift_without_training
+  hypothesis: frozen_supervised_predictors_leave_the_teacher_state_distribution_and_accumulate_high_order_request_error
+  allow_training: false
+  allow_optimizer_updates: false
+  allow_checkpoint_writes: false
+  allow_checkpoint_changes: false
+  allow_reward_change: false
+  allow_algorithm_comparison: false
+  allow_future_truth_for_diagnostic_teacher: true
+  allow_future_truth_in_predictor_inputs: false
+  allow_hardware_profile_id_in_predictor_inputs: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+upstream_learnability:
+  summary: outputs/s4_high_order_learnability_v1/summary.json
+  summary_sha256: 3a2ba4c8824e26954be453d3a9fde4bf7341581198a7613f1780296e38bff288
+  preflight: outputs/s4_high_order_learnability_v1/preflight.json
+  preflight_sha256: a521c91c110b4d3735a23ba70872798e8b2ea81713337b184ed5723364977851
+  effective_config: outputs/s4_high_order_learnability_v1/effective_config.json
+  effective_config_sha256: 4b9c90a2fb8432c6c9a58a17ec3fce995e32a249f480341e441aeabf2ba9a141
+  source_manifest: outputs/s4_high_order_learnability_v1/source_manifest.json
+  source_manifest_sha256: 406f6de5cc6d5cd7feb2483993d34fdd568399de92111c8cee710bcb31ca8c0a
+  teacher_dataset: outputs/s4_high_order_learnability_v1/teacher_dataset.pt
+  teacher_dataset_sha256: 2ba55fe45fc799fcf5ffa34467323be2cedc7edc03106edc318cbd332f73c872
+  scenario_records: outputs/s4_high_order_learnability_v1/scenario_records.csv
+  scenario_records_sha256: 4252947fea666bdb2105ea4af9bec4ccde7c318dd94da16429afbb381b282789
+  episode_records: outputs/s4_high_order_learnability_v1/episode_records.csv
+  episode_records_sha256: 825bf7a3397bad849bf3291e223290c5629e7a85dbb51e2aaa5c6c2b22589442
+  experiment_config: configs/experiments/s4_high_order_learnability_v1.yaml
+  experiment_config_sha256: 7ea33af9715550a6be3cd210a6dcb9d553cb7a919fa6e18f888dcb1fb8837ae8
+  audit_record: docs/S4-D2-R2高阶观测可学习性审计记录.md
+  audit_record_sha256: 9d2e42aa4d4203445146cfdfa3d30c6d59ad09bf0eb32771bada2197958bccf2
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+environment_config_sha256: 8172a07efb2607544011a9fc959f4ab4fbed9a471de9c0112dd15f1d45e5976a
+hardware_profile_source: configs/experiments/s4_hardware_stress_v1.yaml
+hardware_profile_source_sha256: fb6cb5a3e86fa0445345e47b084722a5c1613d07eab73f596c32afb6c4ce07e8
+
+representation:
+  id: zernike_21_added_11
+  kind: zernike
+  num_modes: 21
+  anchor_modes: 10
+  output_modes: 11
+  pseudoinverse_rcond: 0.00001
+
+frozen_controller:
+  id: tracking_conservative
+  active_anchor_modes: 10
+  kind: tracking_leaky_integrator
+  parameters:
+    gain: 0.25
+    leak: 0.10
+    tracking_gain: 0.50
+    max_request_step_rad: 0.15
+
+action_budget:
+  residual_component_limit_rad: 0.05
+  final_component_step_limit_rad: 0.15
+  preserve_total_phase_rms_budget: true
+  total_budget_anchor_modes: 10
+  preserve_environment_modal_limit: true
+
+teacher:
+  preview_horizon_frames: 2
+  uses_future_simulator_truth: true
+  uses_exact_registration: true
+  anchor_residual_coordinates_forced_zero: true
+
+policy_observation:
+  history_frames: 4
+  state_size: 210
+  include_future_truth: false
+  include_oracle_quality_metrics: false
+  include_hardware_profile_identifier: false
+
+predictors:
+  - id: ridge
+    kind: ridge
+    checkpoint: outputs/s4_high_order_learnability_v1/checkpoints/ridge.pt
+    checkpoint_sha256: 45c259a584af7abe7f49106fae52b80b8026dccac06b0d27868397f6c6f7b866
+  - id: mlp_seed_8201
+    kind: mlp
+    initialization_seed: 8201
+    hidden_size: 256
+    checkpoint: outputs/s4_high_order_learnability_v1/checkpoints/mlp_seed_8201_best.pt
+    checkpoint_sha256: a4418b12185ba854d067572ade8115c840ddac6a8945bfb87e22ab93c834ab72
+  - id: mlp_seed_8202
+    kind: mlp
+    initialization_seed: 8202
+    hidden_size: 256
+    checkpoint: outputs/s4_high_order_learnability_v1/checkpoints/mlp_seed_8202_best.pt
+    checkpoint_sha256: 3bc1440a5db3bae6e770df4a7b88bb60d346b78132702334706924efc7055b3a
+  - id: mlp_seed_8203
+    kind: mlp
+    initialization_seed: 8203
+    hidden_size: 256
+    checkpoint: outputs/s4_high_order_learnability_v1/checkpoints/mlp_seed_8203_best.pt
+    checkpoint_sha256: 1d1ae69401b1451bd0fb9e39a24be90f0d1de0bf72ac3bfe3311d54e0bc5d98e
+
+diagnostic:
+  steps_per_episode: 200
+  episodes_per_condition: 16
+  scales: [0.0, 0.10, 0.25, 0.50, 1.0]
+  time_bins:
+    - {id: warmup_000_019, start: 0, stop: 20}
+    - {id: early_020_049, start: 20, stop: 50}
+    - {id: middle_050_099, start: 50, stop: 100}
+    - {id: late_100_149, start: 100, stop: 150}
+    - {id: final_150_199, start: 150, stop: 200}
+  profile_ids:
+    - nominal
+    - delay_3
+    - settling_050
+    - registration_moderate
+    - registration_severe
+    - combined_moderate
+  conditions:
+    - id: shift_frozen
+      regime: frozen_stationary
+      base_seed: 3460000
+      wind_speed_mps: 0.525
+      wind_direction_deg: 30.0
+      slm_delay_frames: 2
+    - id: shift_boiling
+      regime: boiling_stationary_wind
+      base_seed: 3461000
+      wind_speed_mps: 0.625
+      wind_direction_deg: 45.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+    - id: shift_combined
+      regime: boiling_varying_wind_noisy
+      base_seed: 3462000
+      wind_speed_mps: 0.50
+      wind_direction_deg: 85.0
+      frozen_flow_rho: 0.995
+      wind_speed_modulation_fraction: 0.15
+      wind_direction_modulation_deg: 15.0
+      wind_modulation_period_frames: 80
+      wind_modulation_phase_deg: 270.0
+      slm_delay_frames: 2
+
+science_gate:
+  proposed_min_relative_power_gain: 0.02
+  min_power_delta_ci95_low: 0.0
+  min_strehl_delta_ci95_low: 0.0
+  max_phase_rmse_delta_ci95_high: 0.0
+  max_violation_fraction: 0.05
+  require_all_profiles_pass: true
+
+interpretation_thresholds:
+  on_policy_mse_over_offline_reference_min: 2.00
+  on_policy_mse_ratio_late_over_early_min: 1.50
+  state_ood_fraction_increase_min: 0.02
+  cumulative_added_request_ratio_late_over_early_min: 1.25
+  reduced_scale_improvement_over_full_scale_min: 0.05
+  zero_alignment_max_abs_error: 0.000005
+  projection_comparison_tolerance_rad: 0.0000001
+
+protected_seed_ranges:
+  - id: all_prior_stages
+    start_inclusive: 0
+    end_exclusive: 3460000
+  - id: reserved_future_rl_and_s4d3
+    start_inclusive: 3500000
+    end_exclusive: 5000000
+
+quick:
+  steps_per_episode: 20
+  episodes_per_condition: 2
+  scales: [0.0, 0.25, 1.0]
+  time_bins:
+    - {id: quick_000_004, start: 0, stop: 5}
+    - {id: quick_005_009, start: 5, stop: 10}
+    - {id: quick_010_014, start: 10, stop: 15}
+    - {id: quick_015_019, start: 15, stop: 20}
+  profile_ids: [nominal]
+  conditions:
+    - id: shift_quick
+      regime: boiling_stationary_wind
+      base_seed: 3491000
+      wind_speed_mps: 0.55
+      wind_direction_deg: 50.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+
+outputs:
+  directory: outputs/s4_closed_loop_shift_v1
+  quick_directory: outputs/s4_closed_loop_shift_v1_quick_r4
+
+tracked_source_files:
+  - scripts/diagnose_s4_closed_loop_shift.py
+  - src/runtime.py
+  - src/training_progress.py
+  - src/rl/residual_control.py
+  - src/rl/s4_closed_loop_shift.py
+  - src/rl/s4_high_order_learnability.py
+  - src/rl/s4_high_order_capacity.py
+  - src/rl/s4_oracle_bound.py
+  - src/rl/s4_representation_capacity.py
+  - src/rl/s4_r2_diagnostic.py
+  - src/rl/s4_training.py
+  - src/simulation/config.py
+  - src/simulation/controllers.py
+  - src/simulation/env.py
+  - src/simulation/hardware_effects.py
+  - src/simulation/modes.py
+  - src/simulation/robust_control.py
+  - src/simulation/turbulence.py

@@ -12,7 +12,9 @@ from src.simulation.controllers import (
     LeakyIntegratorController,
     LinearPredictiveController,
     NoCorrectionController,
+    RidgePredictiveController,
     ResUNetModalController,
+    TrackingLeakyIntegratorController,
 )
 from src.simulation.env import AdaptiveOpticsEnv
 from src.simulation.evaluation import (
@@ -88,6 +90,44 @@ def test_leaky_integrator_updates_incremental_request():
     assert controller.requested_modal.item() == pytest.approx(-0.95)
 
 
+def test_tracking_integrator_uses_actual_action_and_limits_request_step():
+    controller = TrackingLeakyIntegratorController(
+        num_modes=1,
+        modal_limit_rad=3,
+        gain=0.4,
+        leak=0.1,
+        tracking_gain=0.5,
+        max_request_step_rad=0.1,
+    )
+    controller.reset(batch_size=1, device=torch.device("cpu"), dtype=torch.float32)
+    controller.requested_modal.fill_(-1.0)
+    observation = _observation(
+        residual=torch.tensor([[0.5]]),
+        applied=torch.tensor([[-0.2]]),
+    )
+
+    action = controller.action(observation)
+
+    assert action.item() == pytest.approx(0.1)
+    assert controller.requested_modal.item() == pytest.approx(-0.9)
+
+
+def test_tracking_integrator_reduces_to_leaky_when_tracking_is_disabled():
+    leaky = LeakyIntegratorController(1, 3, gain=0.3, leak=0.1)
+    tracking = TrackingLeakyIntegratorController(
+        1,
+        3,
+        gain=0.3,
+        leak=0.1,
+        tracking_gain=0,
+    )
+    observation = _observation(torch.tensor([[0.7]]), torch.tensor([[0.2]]))
+    for controller in (leaky, tracking):
+        controller.reset(1, torch.device("cpu"), torch.float32)
+
+    assert torch.equal(leaky.action(observation), tracking.action(observation))
+
+
 def test_linear_predictor_extrapolates_disturbance_for_delay():
     controller = LinearPredictiveController(
         num_modes=1,
@@ -103,6 +143,27 @@ def test_linear_predictor_extrapolates_disturbance_for_delay():
     assert first.item() == pytest.approx(-1.0)
     assert second.item() == pytest.approx(-1.5)
     assert controller.requested_modal.item() == pytest.approx(-2.5)
+
+
+def test_ridge_predictor_uses_fixed_history_and_two_frame_target():
+    controller = RidgePredictiveController(
+        num_modes=1,
+        modal_limit_rad=10,
+        sequence_length=2,
+        prediction_horizon=2,
+        normalization_mean=torch.zeros(1),
+        normalization_scale=torch.ones(1),
+        weight=torch.tensor([[0.0], [1.0]]),
+        bias=torch.zeros(1),
+    )
+    controller.reset(batch_size=1, device=torch.device("cpu"), dtype=torch.float32)
+
+    first = controller.action(_observation(torch.tensor([[1.0]]), torch.zeros(1, 1)))
+    second = controller.action(_observation(torch.tensor([[2.0]]), torch.zeros(1, 1)))
+
+    assert first.item() == pytest.approx(-1.0)
+    assert second.item() == pytest.approx(-1.0)
+    assert controller.requested_modal.item() == pytest.approx(-2.0)
 
 
 def test_resunet_controller_projects_predicted_residual_to_same_modal_action_space():
@@ -169,8 +230,49 @@ def test_rollout_is_reproducible_and_exports_dynamic_contract(tmp_path):
         assert handle.attrs["stage"] == "S2"
         assert handle.attrs["observation_kind"] == "oracle_modal_features"
         assert handle["observation/features"].shape == (2, 5, config.observation_size)
+        assert handle["observation/true_features"].shape == (
+            2,
+            5,
+            config.observation_size,
+        )
         assert handle["action/requested_modal"].shape == (2, 4, config.num_modes)
         assert handle["meta/episode_seed"][:].tolist() == [40, 41]
+
+
+def test_rollout_modal_noise_is_reproducible_and_does_not_change_true_metrics():
+    config = _config()
+    noisy = run_controller_rollout(
+        config,
+        "cpu",
+        NoCorrectionController(config.num_modes, config.modal_limit_rad),
+        seed=44,
+        observation_noise_std_rad=0.1,
+    )
+    repeated = run_controller_rollout(
+        config,
+        "cpu",
+        NoCorrectionController(config.num_modes, config.modal_limit_rad),
+        seed=44,
+        observation_noise_std_rad=0.1,
+    )
+    clean = run_controller_rollout(
+        config,
+        "cpu",
+        NoCorrectionController(config.num_modes, config.modal_limit_rad),
+        seed=44,
+    )
+
+    assert torch.equal(noisy.observations, repeated.observations)
+    assert torch.equal(noisy.true_observations, clean.true_observations)
+    assert torch.equal(noisy.strehl, clean.strehl)
+    assert not torch.equal(
+        noisy.observations[:, :, : config.num_modes],
+        noisy.true_observations[:, :, : config.num_modes],
+    )
+    assert torch.equal(
+        noisy.observations[:, :, config.num_modes :],
+        noisy.true_observations[:, :, config.num_modes :],
+    )
 
 
 def test_dynamic_resunet_data_preserves_complete_episode_metadata():

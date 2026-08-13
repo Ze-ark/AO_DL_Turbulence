@@ -1,0 +1,199 @@
+metadata:
+  stage: S4-D2-DIAGNOSTIC
+  purpose: diagnose_failed_residual_sac_without_retraining
+  post_hoc_diagnostic_only: true
+  allow_training: false
+  allow_checkpoint_updates: false
+  allow_d1_trajectory_access: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+upstream_s4d2:
+  summary: outputs/s4_residual_sac_v1/summary.json
+  summary_sha256: 48c8456c34279d6c69fbb4178142a7aa7ac6f1239ec0fbd67f584f82b85a8096
+  source_manifest: outputs/s4_residual_sac_v1/source_manifest.json
+  source_manifest_sha256: 32922ad5799f7459df5fe643f0839d32e9ea9d485f201a46a2ccd626b83e1021
+  experiment_config: configs/experiments/s4_residual_sac_v1.yaml
+  experiment_config_sha256: a533ff884f8bbdb6d146a7273dcf3b8d38743ad31a551fbe2a95995b8b432105
+  audit_record: docs/S4-D2残差SAC训练审计记录.md
+  audit_record_sha256: 9cd91e29e7d5abbaf0d6910671c6ec05e5ce8d940a8e03b39ea3e0736429e8a0
+  required_training_status: completed_pending_audit
+  required_development_status: ANALYSIS_REQUIRED
+  required_pass_count: 0
+  require_s4d3_closed: true
+
+checkpoints:
+  - policy_seed: 4101
+    path: outputs/s4_residual_sac_v1/policy_seed_4101/checkpoint_best.pt
+    sha256: ef919a1fd1d3d5b6792574a397aafd9342db9283eee896da4ca4fd6459aabe34
+  - policy_seed: 4102
+    path: outputs/s4_residual_sac_v1/policy_seed_4102/checkpoint_best.pt
+    sha256: 9ac8e4a802a0bb046ee450e95b6022698c101991ad28118bdb7d87532b4542ad
+  - policy_seed: 4103
+    path: outputs/s4_residual_sac_v1/policy_seed_4103/checkpoint_best.pt
+    sha256: a057d42207ac4ef04f7ae1e5ce18a86b6fde5cdc5e745b35375d5f3fb594cd59
+
+# 以下字段必须与正式训练配置逐项相同，预检会拒绝漂移。
+environment_config: configs/environment/s1_taylor_v1.yaml
+environment_config_sha256: 8172a07efb2607544011a9fc959f4ab4fbed9a471de9c0112dd15f1d45e5976a
+hardware_profile_source: configs/experiments/s4_hardware_stress_v1.yaml
+hardware_profile_source_sha256: fb6cb5a3e86fa0445345e47b084722a5c1613d07eab73f596c32afb6c4ce07e8
+
+frozen_controller:
+  id: tracking_conservative
+  kind: tracking_leaky_integrator
+  parameters:
+    gain: 0.25
+    leak: 0.10
+    tracking_gain: 0.50
+    max_request_step_rad: 0.15
+
+policy_observation:
+  history_frames: 4
+  include_oracle_quality_metrics: false
+  fields:
+    - residual_modal_noisy
+    - applied_modal
+    - requested_modal
+    - frozen_baseline_delta
+
+action:
+  num_modes: 10
+  residual_action_limit_rad: 0.05
+  final_action_step_limit_rad: 0.15
+  preserve_environment_modal_limit: true
+
+reward:
+  measured_power_weight: 1.0
+  residual_action_weight: 0.01
+  violation_weight: 0.50
+  scientific_metrics_are_separate: true
+
+sac_actor:
+  state_size: 100
+  action_size: 10
+  hidden_size: 256
+  deterministic: true
+
+# 缩放只改变已冻结策略的输出。反向残差只用于诊断，不是候选算法。
+variants:
+  - id: zero_residual
+    label: 零残差接线检查
+    scale: 0.0
+  - id: residual_025
+    label: 四分之一残差
+    scale: 0.25
+  - id: residual_050
+    label: 二分之一残差
+    scale: 0.50
+  - id: residual_100
+    label: 原始残差
+    scale: 1.0
+  - id: residual_neg100
+    label: 反向残差诊断
+    scale: -1.0
+
+# 新开发种子段，与D1、D2训练/验证和预留D3完全隔离。
+diagnostic_physical_conditions:
+  - id: d2diag_frozen
+    regime: frozen_stationary
+    base_seed: 2200000
+    wind_speed_mps: 0.575
+    wind_direction_deg: 20.0
+    slm_delay_frames: 2
+  - id: d2diag_boiling
+    regime: boiling_stationary_wind
+    base_seed: 2201000
+    wind_speed_mps: 0.675
+    wind_direction_deg: 55.0
+    frozen_flow_rho: 0.995
+    slm_delay_frames: 2
+  - id: d2diag_combined
+    regime: boiling_varying_wind_noisy
+    base_seed: 2202000
+    wind_speed_mps: 0.55
+    wind_direction_deg: 95.0
+    frozen_flow_rho: 0.995
+    wind_speed_modulation_fraction: 0.15
+    wind_direction_modulation_deg: 15.0
+    wind_modulation_period_frames: 80
+    wind_modulation_phase_deg: 45.0
+    slm_delay_frames: 2
+
+diagnostic_profile_ids:
+  - nominal
+  - settling_050
+  - registration_severe
+  - combined_moderate
+
+evaluation:
+  episodes_per_physical_condition: 16
+  steps: 200
+  compare_on_identical_episode_seeds: true
+  zero_equivalence_tolerance: 0.0000001
+  scientific_metrics:
+    - power_in_bucket
+    - strehl
+    - phase_rmse
+    - violation_fraction
+  action_diagnostics:
+    - residual_magnitude
+    - cosine_with_frozen_action
+    - cancellation_fraction
+    - projection_fraction
+    - training_style_reward
+
+# 预检禁止诊断种子落入这些已用或保留区间。
+forbidden_seed_ranges:
+  - id: s4d1_unseen
+    start_inclusive: 1600000
+    end_exclusive: 1610000
+  - id: s4d2_training_and_validation
+    start_inclusive: 1700000
+    end_exclusive: 1810000
+  - id: s4d2_quick
+    start_inclusive: 1950000
+    end_exclusive: 1970000
+  - id: reserved_s4d3
+    start_inclusive: 2100000
+    end_exclusive: 2200000
+
+quick:
+  steps: 12
+  batch_size: 2
+  policy_seeds:
+    - 4101
+  variant_ids:
+    - zero_residual
+    - residual_050
+    - residual_100
+    - residual_neg100
+  profile_ids:
+    - nominal
+  physical_conditions:
+    - id: d2diag_quick
+      regime: boiling_stationary_wind
+      base_seed: 2290000
+      wind_speed_mps: 0.50
+      wind_direction_deg: 40.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+
+outputs:
+  directory: outputs/s4_residual_sac_diagnostic_v1
+  quick_directory: outputs/s4_residual_sac_diagnostic_v1_quick_v2
+
+tracked_source_files:
+  - scripts/diagnose_s4_residual_sac.py
+  - src/runtime.py
+  - src/training_progress.py
+  - src/rl/residual_control.py
+  - src/rl/residual_sac.py
+  - src/rl/s4_training.py
+  - src/rl/s4_diagnostic.py
+  - src/simulation/config.py
+  - src/simulation/controllers.py
+  - src/simulation/env.py
+  - src/simulation/hardware_effects.py
+  - src/simulation/robust_control.py
+  - src/simulation/turbulence.py

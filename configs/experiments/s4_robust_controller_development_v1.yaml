@@ -1,0 +1,168 @@
+metadata:
+  stage: S4-D0
+  purpose: software_only_robust_classical_controller_development
+  scientific_gate: robust_controller_before_residual_sac
+  allow_real_hardware_claims: false
+  allow_rl_claims: false
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+environment_config_sha256: 8172a07efb2607544011a9fc959f4ab4fbed9a471de9c0112dd15f1d45e5976a
+upstream_s4c_summary: outputs/s4_hardware_stress_v1/summary.json
+upstream_s4c_summary_sha256: 97279baec2f02e5eceac7340a0b0651644f21e48c0a1ae5e5fe275f62f66be33
+hardware_profile_source: configs/experiments/s4_hardware_stress_v1.yaml
+hardware_profile_source_sha256: fb6cb5a3e86fa0445345e47b084722a5c1613d07eab73f596c32afb6c4ce07e8
+
+controllers:
+  - id: no_correction
+    kind: no_correction
+    role: reference
+    parameters: {}
+  - id: frozen_leaky
+    kind: leaky_integrator
+    role: incumbent
+    parameters:
+      gain: 0.35
+      leak: 0.10
+  - id: tracking_balanced
+    kind: tracking_leaky_integrator
+    role: candidate
+    parameters:
+      gain: 0.35
+      leak: 0.10
+      tracking_gain: 0.75
+      max_request_step_rad: 0.15
+  - id: tracking_conservative
+    kind: tracking_leaky_integrator
+    role: candidate
+    parameters:
+      gain: 0.25
+      leak: 0.10
+      tracking_gain: 0.50
+      max_request_step_rad: 0.15
+  - id: tracking_safe
+    kind: tracking_leaky_integrator
+    role: candidate
+    parameters:
+      gain: 0.25
+      leak: 0.10
+      tracking_gain: 0.75
+      max_request_step_rad: 0.15
+  - id: tracking_lowstep
+    kind: tracking_leaky_integrator
+    role: candidate
+    parameters:
+      gain: 0.20
+      leak: 0.10
+      tracking_gain: 0.75
+      max_request_step_rad: 0.10
+
+evaluation:
+  reference_controller: no_correction
+  incumbent_controller: frozen_leaky
+  candidate_controllers:
+    - tracking_balanced
+    - tracking_conservative
+    - tracking_safe
+    - tracking_lowstep
+  primary_metric: power_in_bucket
+  observation_kind: noisy_oracle_modal_features_with_assumed_hardware_errors
+  steps: 200
+  episodes_per_physical_condition: 32
+
+physical_conditions:
+  - id: d0_frozen
+    regime: frozen_stationary
+    base_seed: 1500000
+    wind_speed_mps: 0.50
+    wind_direction_deg: 20.0
+    slm_delay_frames: 2
+  - id: d0_boiling
+    regime: boiling_stationary_wind
+    base_seed: 1501000
+    wind_speed_mps: 0.55
+    wind_direction_deg: 55.0
+    frozen_flow_rho: 0.995
+    slm_delay_frames: 2
+  - id: d0_combined
+    regime: boiling_varying_wind_noisy
+    base_seed: 1502000
+    wind_speed_mps: 0.60
+    wind_direction_deg: 75.0
+    frozen_flow_rho: 0.995
+    wind_speed_modulation_fraction: 0.15
+    wind_direction_modulation_deg: 15.0
+    wind_modulation_period_frames: 80
+    wind_modulation_phase_deg: 45.0
+    slm_delay_frames: 2
+
+hardware_profile_ids:
+  - nominal
+  - delay_3
+  - settling_050
+  - registration_moderate
+  - registration_severe
+  - combined_moderate
+  - combined_severe
+
+required_profile_ids:
+  - nominal
+  - delay_3
+  - settling_050
+  - registration_moderate
+  - registration_severe
+  - combined_moderate
+
+profile_gate:
+  min_power_delta_ci95_low: 0.05
+  min_mean_relative_power_gain: 0.10
+  min_strehl_delta_ci95_low: 0.0
+  max_phase_rmse_delta_ci95_high: 0.0
+  max_violation_fraction: 0.05
+  require_every_condition_power_positive: true
+
+selection:
+  nominal_profile_id: nominal
+  max_nominal_power_drop_fraction: 0.03
+  objective: maximize_minimum_required_profile_relative_power_gain
+
+quick:
+  steps: 10
+  batch_size: 2
+  physical_condition:
+    id: quick_robust_combined
+    regime: boiling_varying_wind_noisy
+    base_seed: 1992000
+    wind_speed_mps: 0.50
+    wind_direction_deg: 60.0
+    frozen_flow_rho: 0.995
+    wind_speed_modulation_fraction: 0.10
+    wind_direction_modulation_deg: 10.0
+    wind_modulation_period_frames: 20
+    slm_delay_frames: 2
+  profile_ids:
+    - settling_050
+    - registration_severe
+    - combined_moderate
+
+outputs:
+  directory: outputs/s4_robust_controller_development_v1
+  export_trajectories: true
+
+# 实现完成后冻结；预检必须逐项核对，禁止静默更新。
+source_manifest:
+  scripts/run_s4_robust_controller_development.py: 3e4d7cff659d7a9faa6af46ac090468c16e89145d3ff56f2323cbf978b82dec3
+  src/__init__.py: 46d89925e6c39c642862d0d10e428ad4df12a6c836fe838eec2a9161a28fedbe
+  src/runtime.py: 22f9bf57b7dbb41617cca8ae77fdfa12551651b2736f32dccca47e3cbd38e319
+  src/training_progress.py: 9f7c11f434ab5a8b063938f713f70f083d05fa06f4ddc37b72e1f4772adf8b16
+  src/simulation/__init__.py: 3ed7438b92498508ca6ba8531d78150336ddf8c1c0936bdb8c9dde532de96020
+  src/simulation/config.py: d2610bc59562523d7a91aba424484fe0d8f771e72d06bb6143c89a056b312345
+  src/simulation/controller_selection.py: dac0ef2e0ce3399a41ec36bf5c19c844a946fd6aa4f78b045875ecb3c5309d05
+  src/simulation/controllers.py: 99cb0afc6f4075557980bf24bb3ad4f5d3fe29b3e8bef208d31afb37139101f3
+  src/simulation/env.py: 16f40d4710ee0f71781e96bd81d0ff31a680bdeb5c7c88420da0e27088aa8620
+  src/simulation/evaluation.py: ed29e6ca9a046d0408acf1e7d1604e221fd1fe063731004ee8a166f88f64bcbb
+  src/simulation/hardware_effects.py: 4470028fd05f8912dae88f30b4caf9b1a917e47c677a6f8df7bb7bd0488ea3d6
+  src/simulation/modes.py: a98f6983316478b937bafbbfcbee9fd0230ce57bc2950db27aa78dd650823085
+  src/simulation/optics.py: 91bfe7f74736d4452d38fa9ed8b9301e7474f48e62f9b99aaef9493a80dc0f8e
+  src/simulation/robust_control.py: e9e9c3501725898342030112cffffc764c92a0ae2553435f7532d870588563d3
+  src/simulation/slm.py: a035dc1816c9d48699d3ba62b71e90dd7afd35c4f1f9d3f47e8907918cc571ed
+  src/simulation/turbulence.py: 40ce5b1c846bdee1b2c5a5fcc708d3f8cde5574c049170b6d4a968510b62622c

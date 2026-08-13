@@ -1,0 +1,207 @@
+metadata:
+  stage: S4-D2-R2-MODAL-ABLATION
+  purpose: isolate_anchor_and_added_mode_contributions_at_quarter_scale
+  reuse_upstream_diagnostic_seeds_for_paired_ablation: true
+  allow_training: false
+  allow_checkpoint_updates: false
+  allow_prior_trajectory_file_reuse: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+  allow_algorithm_change: false
+  allow_reward_change: false
+  allow_gate_relaxation: false
+
+upstream_diagnostic:
+  summary: outputs/s4_residual_sac_r2_diagnostic_v1/summary.json
+  summary_sha256: 6070da95bf5d85ce88e34f052404c6236f3823cd1774f1e88b492d014c8747fe
+  episode_records: outputs/s4_residual_sac_r2_diagnostic_v1/episode_records.csv
+  episode_records_sha256: 793b560a7e5bc16495fbbf1793b05d1c38c26fbc68af7bac7f0c0de21b101257
+  scenario_records: outputs/s4_residual_sac_r2_diagnostic_v1/scenario_records.csv
+  scenario_records_sha256: 8950c708759fad42289a339c112e2cf0d585d55743e7d5263f4fcc2c16cdb230
+  preflight: outputs/s4_residual_sac_r2_diagnostic_v1/preflight.json
+  preflight_sha256: a1dfedcf9f893055a02df00009e62b298320b75d351d8bd9a691f8baf60f9b5a
+  effective_config: outputs/s4_residual_sac_r2_diagnostic_v1/effective_config.json
+  effective_config_sha256: a9d51195cb96ea6ed66edd371bc19097a357302c6e8b81ca0398d66c8a198ca1
+  source_manifest: outputs/s4_residual_sac_r2_diagnostic_v1/source_manifest.json
+  source_manifest_sha256: cbe2a1e52d863573a74317464ee92ddf0a29ea01c051ea564fcf0f8ab1357789
+  experiment_config: configs/experiments/s4_residual_sac_r2_diagnostic_v1.yaml
+  experiment_config_sha256: d7e6c2a3849c87554dee3c0a74165c5bc1388f9cf48474f429ecdf48a283c13c
+  audit_record: docs/S4-D2-R2失败诊断审计记录.md
+  audit_record_sha256: 01223f505332416da5c95e941048c2df3202ba02905ae000f0ece138e6ee9505
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+environment_config_sha256: 8172a07efb2607544011a9fc959f4ab4fbed9a471de9c0112dd15f1d45e5976a
+hardware_profile_source: configs/experiments/s4_hardware_stress_v1.yaml
+hardware_profile_source_sha256: fb6cb5a3e86fa0445345e47b084722a5c1613d07eab73f596c32afb6c4ce07e8
+
+representations:
+  - id: zernike_21
+    kind: zernike
+    num_modes: 21
+  - id: zernike_36
+    kind: zernike
+    num_modes: 36
+
+frozen_controller:
+  id: tracking_conservative
+  active_anchor_modes: 10
+  kind: tracking_leaky_integrator
+  parameters:
+    gain: 0.25
+    leak: 0.10
+    tracking_gain: 0.50
+    max_request_step_rad: 0.15
+
+policy_observation:
+  history_frames: 4
+  include_oracle_quality_metrics: false
+  fields:
+    - residual_modal_noisy_all_representation_modes
+    - applied_modal_all_representation_modes
+    - requested_modal_all_representation_modes
+    - frozen_ten_mode_baseline_delta_zero_padded
+
+action:
+  residual_action_limit_rad: 0.05
+  final_action_step_limit_rad: 0.15
+  preserve_total_phase_rms_budget: true
+  total_budget_anchor_modes: 10
+  preserve_environment_modal_limit: true
+
+reward:
+  measured_power_weight: 1.0
+  residual_action_weight: 0.01
+  violation_weight: 0.50
+  scientific_metrics_are_separate: true
+
+checkpoints:
+  - representation_id: zernike_21
+    num_modes: 21
+    policy_seed: 7101
+    path: outputs/s4_residual_sac_r2_v1/zernike_21/policy_seed_7101/checkpoint_best.pt
+    sha256: 2992a00cd9d9bc1afe4074ab883a9545661a32298cb454e95a1d96d003be372b
+  - representation_id: zernike_21
+    num_modes: 21
+    policy_seed: 7102
+    path: outputs/s4_residual_sac_r2_v1/zernike_21/policy_seed_7102/checkpoint_best.pt
+    sha256: 88b043551c9c85f78bf55592c55f8fd8a470a8def8a780d3fd1cc46026c46205
+  - representation_id: zernike_21
+    num_modes: 21
+    policy_seed: 7103
+    path: outputs/s4_residual_sac_r2_v1/zernike_21/policy_seed_7103/checkpoint_best.pt
+    sha256: 9a42c05356fedf6475ad0b1598e6e18ed255039c80f72b6064f93eb1953e13b8
+  - representation_id: zernike_36
+    num_modes: 36
+    policy_seed: 7101
+    path: outputs/s4_residual_sac_r2_v1/zernike_36/policy_seed_7101/checkpoint_best.pt
+    sha256: a6dd210d542aa21b2eb7033677aea4585be0780fb9199afb3c29e247851c1d92
+  - representation_id: zernike_36
+    num_modes: 36
+    policy_seed: 7102
+    path: outputs/s4_residual_sac_r2_v1/zernike_36/policy_seed_7102/checkpoint_best.pt
+    sha256: 8f6819faef13853688f44ba79d1033fc63fe3345ff7300538fe7621546e36b9c
+  - representation_id: zernike_36
+    num_modes: 36
+    policy_seed: 7103
+    path: outputs/s4_residual_sac_r2_v1/zernike_36/policy_seed_7103/checkpoint_best.pt
+    sha256: 25be1ad6bc12bcb0f481c753c4f322e0f1d23e22136eaf424468a655cfa74094
+
+# 固定25%幅度，因为上一诊断中两种表示在该幅度下均没有残差L2投影。
+variants:
+  - id: all_modes_quarter
+    scale: 0.25
+    mask: all
+  - id: anchor_only_quarter
+    scale: 0.25
+    mask: anchor_only
+  - id: added_modes_only_quarter
+    scale: 0.25
+    mask: added_only
+
+diagnostic_profile_ids:
+  - nominal
+  - delay_3
+  - settling_050
+  - registration_moderate
+  - registration_severe
+  - combined_moderate
+
+# 正式消融故意复用上一诊断的开发种子，形成逐回合配对；不读取旧轨迹文件。
+diagnostic_physical_conditions:
+  - id: r2_diag_frozen
+    regime: frozen_stationary
+    base_seed: 3100000
+    wind_speed_mps: 0.525
+    wind_direction_deg: 30.0
+    slm_delay_frames: 2
+  - id: r2_diag_boiling
+    regime: boiling_stationary_wind
+    base_seed: 3101000
+    wind_speed_mps: 0.625
+    wind_direction_deg: 45.0
+    frozen_flow_rho: 0.995
+    slm_delay_frames: 2
+  - id: r2_diag_combined
+    regime: boiling_varying_wind_noisy
+    base_seed: 3102000
+    wind_speed_mps: 0.50
+    wind_direction_deg: 85.0
+    frozen_flow_rho: 0.995
+    wind_speed_modulation_fraction: 0.15
+    wind_direction_modulation_deg: 15.0
+    wind_modulation_period_frames: 80
+    wind_modulation_phase_deg: 270.0
+    slm_delay_frames: 2
+
+evaluation:
+  episodes_per_physical_condition: 16
+  steps: 200
+  deterministic_policy: true
+  paired_episode_seeds: true
+  zero_equivalence_tolerance: 1.0e-6
+  upstream_quarter_reproduction_tolerance: 1.0e-6
+  violation_limit: 0.05
+
+quick:
+  representation_ids:
+    - zernike_21
+    - zernike_36
+  policy_seeds:
+    - 7101
+  variant_ids:
+    - all_modes_quarter
+    - anchor_only_quarter
+    - added_modes_only_quarter
+  profile_ids:
+    - nominal
+  physical_conditions:
+    - id: r2_modal_quick
+      regime: boiling_stationary_wind
+      base_seed: 3191000
+      wind_speed_mps: 0.55
+      wind_direction_deg: 45.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+  batch_size: 4
+  steps: 32
+
+outputs:
+  directory: outputs/s4_residual_sac_r2_modal_ablation_v1
+  quick_directory: outputs/s4_residual_sac_r2_modal_ablation_v1_quick
+
+tracked_source_files:
+  - scripts/diagnose_s4_r2_modal_ablation.py
+  - src/runtime.py
+  - src/training_progress.py
+  - src/rl/residual_control.py
+  - src/rl/residual_sac.py
+  - src/rl/s4_training.py
+  - src/rl/s4_r2_diagnostic.py
+  - src/rl/s4_r2_modal_ablation.py
+  - src/simulation/config.py
+  - src/simulation/controllers.py
+  - src/simulation/env.py
+  - src/simulation/hardware_effects.py
+  - src/simulation/modes.py
+  - src/simulation/robust_control.py
+  - src/simulation/turbulence.py
