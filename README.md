@@ -1,119 +1,133 @@
-# AO DL Turbulence Compensation
+# AO_DL_Turbulence：离轴全息观测下的湍流补偿
 
-PyTorch project workspace for deep-learning-assisted adaptive optics turbulence compensation.
+让受湍流扰动的光重新集中起来：先建立可信的光学仿真和传统控制器，再检验强化学习能否带来额外收益，最后逐步迁移到真实实验。
 
-The first training target is phase compensation for off-axis holography reconstructed complex optical fields. The initial weak-turbulence reference is the 2x magnification, 40 degree temperature-difference optical field.
+**截至 2026-10-08：纯仿真阶段的 1% 主目标已通过独立确认；目前正在验证相机观测与噪声链，尚未完成真实 SLM 闭环。**
 
-## Layout
+自适应光学（AO）是通过调整光的相位来减轻扰动。离轴数字全息用于重建光场；强化学习（RL）用于根据最近的观测调整补偿动作；空间光调制器（SLM）是计划用于实际施加相位的设备。
 
-- `src/`: training, dataset, model, loss, and evaluation code.
-- `configs/`: training configuration files.
-- `docs/`: method notes, literature notes, and experiment records.
-- `data/raw_matlab_exports/`: MATLAB-exported intensity and phase data. Data files are ignored by Git.
-- `data/processed/`: preprocessed training caches. Files are ignored by Git.
-- `checkpoints/`: model checkpoints. Files are ignored by Git.
-- `outputs/`: figures, metrics, and logs. Files are ignored by Git.
+## 最新进度
 
-## Data Policy
+| 阶段 | 当前状态 | 能说明什么 |
+|---|---|---|
+| G2-C1：冻结方法独立确认 | 已通过并封存 | 在约定的纯仿真条件下，相对冻结积分器通过 1% 主目标及光学质量、平均安全变化规则 |
+| O2：合成全息观测桥接 | 已建立并完成多轮检查 | 策略能够接入合成全息重建的观测历史，不等于真实相机验证 |
+| O2-D1—D6：单因素相机噪声 | 已完成相关诊断、短闭环检查和开发对照 | 分别检查读出噪声、光子噪声，不代表所有噪声范围都可靠 |
+| O2-D7：两种噪声叠加 | 准备验证通过，完整短闭环尚未运行 | 当前下一任务；只检查观测和闭环接线，不训练、不排名 |
+| 真实相机与 SLM 闭环 | 尚未完成 | 仍需实测标定、观测验证与独立硬件安全检查 |
 
-Large data files, training outputs, and model weights should stay out of Git. Keep code, configuration, and small documentation files under version control.
+阶段编号用于追踪实验，不是不同模型的版本号。最新待办以 [项目总览](docs/项目总览.md) 和对应阶段记录为准；带旧日期的计划与“尚未运行”描述属于历史快照。
 
-## Quick Start
+### 已通过的仿真目标：G2-C1
 
-Create a project-local Python 3.13 environment:
+固定模型，使用 64 份新天气，在完整 200 帧反馈回合中与同一个冻结积分器比较，共验收 29,952 条回合。
+
+| 独立确认条件 | 原 RL 的平均功率增量 | RL 加候选打分器后的平均功率增量 |
+|---|---:|---:|
+| 标称仿真 | 1.008742% | 1.025858% |
+| 六档合成硬件误差 | 1.009948% | 1.023868% |
+
+这里的“增量”是完整回合的平均桶内功率相对提升，即更多能量进入事前固定的目标区域。峰值光强比（Strehl，衡量焦斑集中程度）同时改善，残差相位误差下降，平均安全变化符合约定规则。
+
+正式主目标为 **1%**；此前的 **1.05%** 是历史开发参考线。旧失败记录保持原结论，没有考试后修改成绩。上述结果是冻结模型组的平均表现，不保证每个模型、每条轨迹都改善，也不是对所有传统控制算法的胜利。
+
+依据：[阶段成果简明报告](docs/S4-D2-R5-G2阶段成果简明报告.md)、[独立确认审计与封存记录](docs/S4-D2-R5-G2-C1独立确认审计与封存记录.md)。
+
+### 最近完成：O2-D6 光子噪声开发对照
+
+完成 936 条 200 帧回合、187,200 次转移，耗时约 85.2 分钟。三档人工计数条件下，当前方法相对积分器的平均功率增量均约 **1.0135%**；本轮两档光子噪声与同天气无噪声条件的差别很小。
+
+这轮只有 **8 份独立开发天气**，描述性 95% 区间约为 **0.940%—1.088%**。因此不能当作新的独立确认，不能证明稳定超过 1%，也不能认定光子噪声普遍无影响。不同开发轮次使用不同天气，不应直接用均值涨跌判断噪声损害或算法退化。
+
+依据：[O2-D6 完成审计](docs/全息观测链O2-D6完成审计记录.md)。
+
+## 当前算法：传统控制打底，学习方法做小修正
+
+1. **传统积分器先给基础动作。** 它提供稳定、可追溯的控制基座。
+2. **RL 策略根据最近的观测历史修正动作。** 当前策略带时间记忆，不是 ResUNet 直接预测相位图。
+3. **候选动作打分器挑选稍好的合法修正。** 这是离线监督训练的小模型，只能看动作前的观测，不能偷看未来功率、湍流真值或硬件误差标签。
+
+打分器在 G2-C1 中额外贡献约 0.014—0.017 个百分点，同时增加计算开销，不能把整个约 1.02% 的收益归给它。ResUNet 属于早期监督学习与感知探索，不是当前 RL 控制器。
+
+当前 O2 合成观测闭环为：
+
+```text
+合成全息图 → 复光场重建 → 观测历史 → 积分器 + RL 修正 + 候选筛选
+     ↑                                             ↓
+ 下一帧光场 ← 动态湍流与受限的仿真 SLM ← 合法补偿动作
+```
+
+仿真真值与策略可见观测分开；真值可以用于仿真物理、训练目标和独立指标计算，但不能混入正式策略输入或代替相机测量。请求动作与实际施加动作分别保存，保留延迟、量化和限幅影响。
+
+## 当前下一步：O2-D7 联合噪声短闭环
+
+检查四种情况：无噪声、仅读出噪声、仅光子噪声、两种噪声叠加。模型保持冻结；目标是检查观测有效性、因果时间顺序和保存读数重放，不是重新训练或证明新的补偿收益。
+
+按当前阶段准备验证记录，438 项相关测试、正式预检、一次独立 CUDA 快速检查及其只读审计已通过；完整 **624 条 32 帧短回合、19,968 次转移尚未运行**。这些是阶段相关验证，不代表全仓库测试全部通过。
+
+以下命令**仅适用于已有冻结模型和前置实验产物的原工作区**，不是新克隆仓库的演示命令。在仓库根目录的 IDE 集成终端中，由用户手动启动：
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 scripts\verify_observation_bridge_o2_combined_noise_closed_loop.py
+```
+
+不加 `--quick`。完成后先进行只读审计。出现报错或中断时保留目录与日志，不直接重跑、删除或覆盖。**不要重跑已经完成的 D6、旧独立确认或已完成的快速检查。**
+
+方案见 [D7 联合噪声短闭环计划](docs/全息观测链O2-D7联合噪声短闭环计划.md)。
+
+## 仓库结构
+
+| 目录 | 内容 |
+|---|---|
+| `src/simulation/` | 动态湍流、传播、执行器约束和光学指标 |
+| `src/rl/` | 传统基座、强化学习策略、动力学模型和历史诊断 |
+| `observation_bridge/` | 全息生成与重建、相机噪声和观测闭环接口 |
+| `matlab/` | 物理参考实现、真实全息重建和 HDF5 导出 |
+| `configs/`、`scripts/` | 实验配置、训练、诊断、评估与恢复入口 |
+| `tests/` | 物理、接口、因果隔离、统计和输出保护测试 |
+| `docs/` | 中文计划、审计、流程、数据格式和文献记录 |
+| `data/`、`checkpoints/`、`outputs/` | 本地数据、权重和实验产物，不随代码仓库提供 |
+
+## 环境与使用约束
+
+当前阶段记录的验证环境为 Windows、Python 3.13、PyTorch 2.11.0+cu128、CUDA 12.8。正式训练、动态环境和算法比较需要 NVIDIA CUDA GPU，并通过 `src/runtime.py` 解析设备；不可用时立即失败，不静默回退 CPU。MATLAB 用于物理参考与真实复光场数据流程，不是所有 Python 仿真入口的必需条件。
+
+新工作区可先建立本地环境：
 
 ```powershell
 py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -X utf8 -c "from src.runtime import resolve_device; print(resolve_device('cuda'))"
 ```
 
-Run the S0 MATLAB physics tests, then generate a small static validation dataset:
+`requirements.txt` 未完全锁定版本，也不保证安装得到 CUDA 构建；最后一行用于检查设备。环境安装成功不等于具备复现实验所需的数据和冻结权重。
 
-```matlab
-results = runtests('matlab/tests/AoS0PhysicsTest.m');
-assertSuccess(results);
-```
+- 正式训练和正式实验由用户在 IDE 中手动启动；训练显示实时进度并持续保存日志。
+- 动态数据按完整回合拆分，同一扰动序列不得跨训练、开发与确认集合。
+- 已完成实验通过源码、配置、模型与产物指纹保护；缺少产物或来源改变时应拒绝，不应删除保护以强行运行。
+- 通用测试入口为 `.\.venv\Scripts\python.exe -m pytest -q`。具体任务优先运行相关测试，历史冻结哈希相关问题不能擅自改判或绕过。
+- 不提交大型 HDF5、模型权重、原始实验数据、实验输出或缓存；下载的论文 PDF、生成图像和临时文件也留在本地。已有忽略规则见 [.gitignore](.gitignore)。
 
-```matlab
-addpath(fullfile(pwd, 'matlab'));
-simulate_gaussian_turbulence_dataset( ...
-    fullfile(pwd, 'data', 'raw_matlab_exports', 'sim_gaussian_v1.h5'), ...
-    50, ...
-    64);
-```
+## 还没有完成什么
 
-The exported frames pass the S0 propagation checks, but they are independent static scenes rather than RL transitions. Increasing the arguments does not create a dynamic dataset; use the separate S1 environment described below for temporal transitions.
+- 相机观测目前以合成全息为主；生成与重建共用理想几何模型，可能比真实实验更有利。
+- 人工读出噪声与光子计数尺度尚未对应真实曝光和设备标定，不能直接推广到实测相机。
+- 合成硬件误差不是两台实际 SLM 的测量参数。平均安全变化通过不代表零限幅、零违规或实时硬件安全。
+- 真实验证数据必须来自 MATLAB 离轴全息重建的 HDF5 复光场，不能用 PNG 强度图替代。
+- 实验室有两台 `FSLM-2K73-P04` 和光功率计，但尚未完成受限真实闭环。发送图案前必须获得明确授权，并完成设备身份、校正文件、波长、偏振、相位范围、刷新和安全限制检查。
 
-Export the real 2x off-axis hologram validation set through the MATLAB reconstruction pipeline:
+研究目标不是无限追逐仿真分数，而是逐步证明：**冻结方法的增量收益能否在更真实的观测与设备条件下保持。**
 
-```matlab
-cd('C:\Users\Lintianze\OneDrive\Desktop\AO_DL_Turbulence')
-addpath(fullfile(pwd, 'matlab'))
+## 文档导航与研究规则
 
-export_real_offaxis_validation_dataset( ...
-    fullfile(pwd, 'data', 'real_validation', 'real_offaxis_2x_validation.h5'), ...
-    'E:\加扩束镜\2倍放大', ...
-    200, ...
-    [256 256])
-```
+- 入门：[G2 阶段成果简明报告](docs/S4-D2-R5-G2阶段成果简明报告.md)
+- 当前状态：[项目总览](docs/项目总览.md)
+- 运行与停止规则：[训练与评估流程](docs/训练与评估流程.md)
+- 数据契约：[数据格式](docs/数据格式.md)、[MATLAB 导出流程](docs/MATLAB导出流程.md)
+- 研究问题与公平对照：[技术研究管线](docs/rl_ao_research_pipeline_technical.md)
+- 文献入口：[文献清单](docs/文献库/文献清单.md)
 
-Train and evaluate:
+本项目的所有任务必须使用已注册的 **academic-research-suite** 技能：先完整读取技能入口，再按任务选择一个工作流；普通代码与文档修改也须遵守其安全和证据边界。技能不可用时应停止并报告，不静默绕过。使用技能不自动授权多智能体、外部上传、正式训练或真实硬件操作。
 
-```powershell
-.\.venv\Scripts\python.exe -m src.train_compensation --config configs/sim_gaussian_v1.yaml
-.\.venv\Scripts\python.exe -m src.evaluate_compensation --config configs/sim_gaussian_v1.yaml
-.\.venv\Scripts\python.exe -m src.validate_real_experiment --config configs/sim_gaussian_v1.yaml
-```
-
-Detailed Chinese experiment notes are in:
-
-- `docs/项目总览.md`
-- `docs/数据格式.md`
-- `docs/MATLAB导出流程.md`
-- `docs/训练与评估流程.md`
-- `docs/S0物理门验证记录.md`
-- `docs/S1动态环境验证记录.md`
-- `docs/S2传统基线验证记录.md`
-- `docs/S3非线性动力学门槛计划.md`
-- `docs/S3数据量诊断计划.md`
-- `docs/S3收敛与256维容量复查计划.md`
-- `docs/S3-B复杂动态门槛计划.md`
-- `docs/S4-A线性闭环鲁棒性计划.md`
-- `docs/S4-B一次性封存验证计划.md`
-
-Run tests:
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest -q
-```
-
-Run the verified S1 Taylor frozen-flow GPU environment:
-
-```powershell
-.\.venv\Scripts\python.exe scripts\run_s1_smoke.py --steps 50
-```
-
-This command uses diagnostic proportional modal actions. It does not train an RL policy.
-
-Run the verified S2 final pure-simulation comparison:
-
-```powershell
-.\.venv\Scripts\python.exe scripts\run_s2_baselines.py --final
-```
-
-S2 passed its reproducibility gate, but the dynamic memoryless ResUNet did not outperform the strongest traditional controller. No RL or real-SLM result is claimed.
-
-S3-B finished with a negative result, while S4-A selected the leaky integrator and passed its development gate. Preflight the one-time S4-B sealed validation without opening sealed trajectories:
-
-```powershell
-.\.venv\Scripts\python.exe scripts\run_s4_sealed_validation.py --preflight-only
-```
-
-The user opens the formal sealed validation once in the IDE terminal:
-
-```powershell
-.\.venv\Scripts\python.exe scripts\run_s4_sealed_validation.py --acknowledge-sealed-test
-```
-
-It compares only the frozen leaky integrator against no correction. It refuses changed source hashes and repeated sealed access; it does not train RL or command either real SLM.
+持久规则见 [AGENTS.md](AGENTS.md)。文档使用 UTF-8 简体中文，始终区分训练奖励与科学指标、开发对照与独立确认、仿真结果与真实实验。
