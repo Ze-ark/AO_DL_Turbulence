@@ -1,0 +1,129 @@
+[
+  {
+    "filename": "01_Nousiainen_2021_ModelBased_RL_AO.pdf",
+    "url": "https://arxiv.org/pdf/2104.13685",
+    "status": "existing",
+    "bytes": 1370540,
+    "sha256": "9d51b52765391ce8cf73ef36929bce8656b7c4670e77a1892b9586b678851713"
+  },
+  {
+    "filename": "02_Nousiainen_2022_Toward_OnSky_AO_RL.pdf",
+    "url": "https://www.aanda.org/articles/aa/pdf/2022/08/aa43311-22.pdf",
+    "status": "failed",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "filename": "03_Nousiainen_2024_Laboratory_ModelBased_RL_AO.pdf",
+    "url": "https://arxiv.org/pdf/2401.00242",
+    "status": "existing",
+    "bytes": 8866001,
+    "sha256": "e7bffafc04c870d68a0a9285428711d15904f44c97759cffaa9d131d419c31ab"
+  },
+  {
+    "filename": "04_Guyon_2017_EOF_Predictive_Control.pdf",
+    "url": "https://arxiv.org/pdf/1707.00570",
+    "status": "existing",
+    "bytes": 2432616,
+    "sha256": "a0416c29951e39d0d7ecb472ba6675540e7d10b53d626922dbe298282a66153e"
+  },
+  {
+    "filename": "05_Swanson_2021_ClosedLoop_Predictive_Control_CNN.pdf",
+    "url": "https://arxiv.org/pdf/2103.06327",
+    "status": "existing",
+    "bytes": 3047835,
+    "sha256": "4094f7ea72b84d5dc87ab9d2550e296c10953c847fe92903448d4697906b988a"
+  },
+  {
+    "filename": "06_Fowler_2022_Battle_Predictive_Wavefront_Controls.pdf",
+    "url": "https://arxiv.org/pdf/2208.00984",
+    "status": "existing",
+    "bytes": 1033982,
+    "sha256": "71807964d5c5652d57acac1bd212f494ba0cd9b9cb216f88945c6d309e31ae56"
+  },
+  {
+    "filename": "07_Chua_2018_Probabilistic_Dynamics_Models.pdf",
+    "url": "https://arxiv.org/pdf/1805.12114",
+    "status": "existing",
+    "bytes": 4020485,
+    "sha256": "7dbf3c65ece763384258a60f5f4b26d7b849ad80765ed77435c4861f9583219c"
+  },
+  {
+    "filename": "08_Janner_2019_ModelBased_Policy_Optimization.pdf",
+    "url": "https://arxiv.org/pdf/1906.08253",
+    "status": "existing",
+    "bytes": 3668344,
+    "sha256": "89d12b6142a285e541f6315a8911db469bea33514f3b80bdbe6e52439197b149"
+  },
+  {
+    "filename": "09_Haffert_2021_DataDriven_Subspace_Predictive_Control.pdf",
+    "url": "https://arxiv.org/pdf/2103.07566",
+    "status": "existing",
+    "bytes": 1612835,
+    "sha256": "60f39058de161b7b4a131731c79a1fe317bc26e77cb9e58306aa408679a34896"
+  },
+  {
+    "filename": "10_Back_to_Newtons_Laws_2024.pdf",
+    "url": "https://arxiv.org/pdf/2407.10648",
+    "status": "existing",
+    "bytes": 28434166,
+    "sha256": "eacecc99b5e21b776bb7e339a9553a0682cde395e029b9b72112eae275aa865a"
+  },
+  {
+    "filename": "11_Nousiainen_2026_OnSky_RL_AO.pdf",
+    "url": "https://arxiv.org/pdf/2606.10771",
+    "status": "existing",
+    "bytes": 2561908,
+    "sha256": "2250f635ddb2dc73faa46990323d46576c10cf7d1f71f6f8183970cf7fe8cd1d"
+  },
+  {
+    "filename": "12_Haffert_2026_SelfLearning_Predictive_Control.pdf",
+    "url": "https://arxiv.org/pdf/2608.24339",
+    "status": "existing",
+    "bytes": 299379,
+    "sha256": "1319861ee09b42df4812b2f424bc0eeeefd54aaa9858b99995a6ae301713ae33"
+  },
+  {
+    "filename": "13_Parvizi_2023_WFSless_AO_RL_Environment.pdf",
+    "url": "https://www.mdpi.com/2304-6732/10/12/1371/pdf",
+    "status": "failed",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "filename": "14_Seifi_2025_Beacon_Feedback_RL_SLM_FSO.pdf",
+    "url": "https://www.mdpi.com/2304-6732/12/10/979/pdf",
+    "status": "failed",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "filename": "15_Durech_2021_WFSless_AO_Deep_RL.pdf",
+    "url": "https://europepmc.org/articles/PMC8515990?pdf=render",
+    "status": "failed",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "filename": "16_Xu_2024_MOSS_DDPG_Sensorless_AO.pdf",
+    "url": "https://europepmc.org/articles/PMC11427189?pdf=render",
+    "status": "failed",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "filename": "17_SAC_Haarnoja_2018.pdf",
+    "url": "https://proceedings.mlr.press/v80/haarnoja18b/haarnoja18b.pdf",
+    "status": "downloaded",
+    "bytes": 2407011,
+    "sha256": "b071079b67ced375ad88cbbbfd2fc363b3b8ccd894766fb5d329e7ee30d843f5"
+  },
+  {
+    "filename": "18_CPO_Achiam_2017.pdf",
+    "url": "https://proceedings.mlr.press/v70/achiam17a/achiam17a.pdf",
+    "status": "downloaded",
+    "bytes": 944800,
+    "sha256": "738ba84a6cf3d6f947f91a467b13a3c888d908c050a0b9b58d097da22959a08f"
+  },
+  {
+    "filename": "19_Pou_2022_AO_MARL.pdf",
+    "url": "https://upcommons.upc.edu/server/api/core/bitstreams/26f40080-0c75-464b-a0a7-4b7b5988f09a/content",
+    "status": "failed",
+    "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1020)>"
+  }
+]

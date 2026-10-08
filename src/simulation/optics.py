@@ -9,6 +9,9 @@ def focal_plane_metrics(
     residual_phase: torch.Tensor,
     pupil: torch.Tensor,
     bucket_radius_pixels: float,
+    *,
+    ideal_intensity: torch.Tensor | None = None,
+    bucket_mask: torch.Tensor | None = None,
 ) -> dict[str, torch.Tensor]:
     """计算 Strehl、桶内功率、去 piston 相位 RMSE 和能量误差。"""
     if residual_phase.shape[-2:] != pupil.shape:
@@ -20,20 +23,26 @@ def focal_plane_metrics(
         dim=(-2, -1),
     )
     intensity = focal_field.abs().square()
-    ideal_field = torch.fft.fftshift(
-        torch.fft.fft2(torch.fft.ifftshift(pupil_float, dim=(-2, -1)), norm="ortho"),
-        dim=(-2, -1),
-    )
-    ideal_intensity = ideal_field.abs().square()
+    if ideal_intensity is None:
+        ideal_field = torch.fft.fftshift(
+            torch.fft.fft2(torch.fft.ifftshift(pupil_float, dim=(-2, -1)), norm="ortho"),
+            dim=(-2, -1),
+        )
+        ideal_intensity = ideal_field.abs().square()
+    else:
+        ideal_intensity = ideal_intensity.to(residual_phase.dtype)
     total = intensity.sum(dim=(-2, -1))
     ideal_total = ideal_intensity.sum()
     normalized_peak = intensity.amax(dim=(-2, -1)) / total
     ideal_peak = ideal_intensity.max() / ideal_total
 
-    grid_size = pupil.shape[0]
-    pixel = torch.arange(grid_size, device=pupil.device, dtype=residual_phase.dtype) - grid_size // 2
-    PY, PX = torch.meshgrid(pixel, pixel, indexing="ij")
-    bucket = torch.sqrt(PX.square() + PY.square()) <= bucket_radius_pixels
+    if bucket_mask is None:
+        grid_size = pupil.shape[0]
+        pixel = torch.arange(grid_size, device=pupil.device, dtype=residual_phase.dtype) - grid_size // 2
+        PY, PX = torch.meshgrid(pixel, pixel, indexing="ij")
+        bucket = torch.sqrt(PX.square() + PY.square()) <= bucket_radius_pixels
+    else:
+        bucket = bucket_mask
 
     wrapped = torch.atan2(torch.sin(residual_phase), torch.cos(residual_phase))
     phasor = torch.where(pupil, torch.exp(1j * wrapped), torch.zeros_like(field))

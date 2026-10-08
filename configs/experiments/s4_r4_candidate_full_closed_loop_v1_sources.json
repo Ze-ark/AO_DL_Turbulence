@@ -1,0 +1,15 @@
+{
+  "src/rl/r4_candidate_full_closed_loop.py": "1c6274e72dd7f1c6c37e379001bec1856b542cc3f259f5adb9073f5a20d5903e",
+  "scripts/run_s4_r4_candidate_full_closed_loop.py": "4f3709f22d5981ad5f198c66e787d3033583ef478e8eb0f7921ba29ca0ddfa92",
+  "configs/experiments/s4_r4_candidate_full_closed_loop_v1.yaml": "71d4f3ac8b9554c94bcf71e8ac79c521a2fc4f80144b5d0c5f9a3d865a824a60",
+  "tests/test_r4_candidate_full_closed_loop.py": "1d9ce3dab5652f3012249ed1936ac83b899859229d2ed1f05343cedd27bb74cc",
+  "docs/S4-D2-R4-1B2-D3冻结重选完整闭环确认计划.md": "bdb4fc4dd971338a6371dafcfa9ba0f57d88b6aa1a7811a472c7c1a2ee5ae900",
+  "docs/S4-D2-R4-1B2-D2候选动作独立确认审计记录.md": "7ca153011b6545f93cd050a5e98fcdccc1be90a14f5d4fcbc56a3aa5db8f0a9f",
+  "src/rl/r4_candidate_confirmation.py": "cc43c9936d02f33be98ca28b19748aee132f0c9ebc511376c81165d6250283ee",
+  "src/rl/r4_closed_loop.py": "8701b055c68055d8ac71b24ada1f2267fb44d374d82fba4be1483e8173846633",
+  "src/rl/r4_closed_loop_ranking.py": "77505eeb15507fa34512fb61971c93adc7d64ca558299830acbf45b337d5ea24",
+  "src/rl/r4_baselines.py": "b4c9b05516122b3aa0e587911092608b4de46fcc3e3cfd5ba6cd4029e799e1d4",
+  "src/rl/r4_selected_anchor.py": "f2990712fdbff9435cde04625792d86172631bce95ff9d14233b97e3cd3612fe",
+  "src/rl/r4_mpc.py": "9625b25f2dc2c4951cc2ffc4ef7326e59e60e7ef3626e0de5ca908e13f1abafb",
+  "configs/experiments/s4_r4_dynamics_v1.yaml": "91572e2b1ab41769bf7ec758b2a483d229f475a04977be5a5b8598f48ba49d54"
+}

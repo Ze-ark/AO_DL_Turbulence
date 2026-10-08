@@ -1,0 +1,177 @@
+metadata:
+  stage: S4-D2-R3-D2-A
+  experiment_id: AO-S4-D2-R3-D2-A-FROZEN-ACTOR-CRITIC-REPAIR
+  version_label: s4d2_r3_d2a_multistep_critic_repair_v1
+  purpose: compare_frozen_actor_critic_targets_before_any_full_rl_retraining
+  hypothesis: at_least_one_long_or_mixed_target_corrects_actor_ranking_for_all_three_policy_seeds
+  user_authorized_training_preparation: true
+  allow_formal_critic_training: true
+  allow_actor_updates: false
+  allow_alpha_updates: false
+  allow_student_finetuning: false
+  allow_reward_change: false
+  allow_action_budget_change: false
+  allow_gate_relaxation: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+design_contract:
+  config: configs/experiments/s4_r3_multistep_critic_repair_design_v1.yaml
+  config_sha256: c0f5491b7dd7668b5c51555ecd906966ce93409213204d111d8becf5730de8b5
+  plan: docs/S4-D2-R3-D2-A多步评论家修复实验计划.md
+  plan_sha256: e6f5faabab76c13ab6ef403c9f291d9c58bb92bba993f45a97f375e90131bd3c
+
+upstream_d1c:
+  summary: outputs/s4_r3_multistep_target_v1/summary.json
+  summary_sha256: 2be58a390941c53fac9b894b06cbf881e32b0fa9a8c7c193dc9c4c9738e7b060
+  preflight: outputs/s4_r3_multistep_target_v1/preflight.json
+  preflight_sha256: 2b88cccef7f94392517f808905ba84363a705afa113ec64d048290de8d328b13
+  effective_config: outputs/s4_r3_multistep_target_v1/effective_config.json
+  effective_config_sha256: 79c6406f1a21adf2fca1188729886cb49f7ad6b5cc8b73e68a06c3ebd6cad552
+  source_manifest: outputs/s4_r3_multistep_target_v1/source_manifest.json
+  source_manifest_sha256: 4686d4fda9d75b5524bf566e610d8c87b17ee094a5ac552dbf7e2e1782426ca0
+  probe_records: outputs/s4_r3_multistep_target_v1/probe_records.csv
+  probe_records_sha256: 2dfce521f3668daa7ea847454219d2a9458850950d3af92c455845e09ad53c8d
+  episode_records: outputs/s4_r3_multistep_target_v1/episode_records.csv
+  episode_records_sha256: 5fcc265ed076e4772ab2776c494aca54ffc0ed05f0c478eb056b7ea15d027e31
+  experiment_config: configs/experiments/s4_r3_multistep_target_v1.yaml
+  experiment_config_sha256: 6146e7874979f59e07d0c5989943f1702298316f460f4eef4de99a85fdfed103
+  audit_record: docs/S4-D2-R3-D1-C多步目标偏差曲线审计记录.md
+  audit_record_sha256: 0a0ebfce5fb3d7aee06933c9965ffb97f08151ef0e1aa6679ce918f8aac77c8f
+  required_interpretation_status: BOOTSTRAP_OPTIMISM_WITH_FINITE_HORIZON_CORRECTION
+
+frozen_policy:
+  arms: [student_backbone]
+  policy_seeds: [9301, 9302, 9303]
+  deterministic_actor: true
+  update_actor: false
+  update_alpha: false
+  finetune_student: false
+
+candidate_actions:
+  - {id: zero, kind: actor_scale, scale: 0.0}
+  - {id: actor, kind: actor_scale, scale: 1.0}
+
+targets:
+  - {id: one_step_control, kind: n_step, horizon: 1}
+  - {id: n_step_16, kind: n_step, horizon: 16}
+  - {id: n_step_32, kind: n_step, horizon: 32}
+  - {id: td_lambda_095, kind: truncated_td_lambda, horizon: 32, trace_lambda: 0.95}
+
+data:
+  episode_length_steps: 200
+  max_target_horizon: 32
+  reward_accumulator_dtype: float64
+  network_dtype: float32
+  profile_ids:
+    - nominal
+    - delay_3
+    - settling_050
+    - registration_moderate
+    - registration_severe
+    - combined_moderate
+  probe_steps: [0, 80, 160]
+  development:
+    episodes_per_condition: 32
+    conditions:
+      - {id: r3d2_dev_frozen, regime: frozen_stationary, base_seed: 3900000, wind_speed_mps: 0.50, wind_direction_deg: 25.0, slm_delay_frames: 2}
+      - {id: r3d2_dev_boiling, regime: boiling_stationary_wind, base_seed: 3910000, wind_speed_mps: 0.60, wind_direction_deg: 50.0, frozen_flow_rho: 0.995, slm_delay_frames: 2}
+      - {id: r3d2_dev_combined, regime: boiling_varying_wind_noisy, base_seed: 3920000, wind_speed_mps: 0.55, wind_direction_deg: 90.0, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 45.0, slm_delay_frames: 2}
+  validation:
+    episodes_per_condition: 16
+    conditions:
+      - {id: r3d2_val_frozen, regime: frozen_stationary, base_seed: 3930000, wind_speed_mps: 0.575, wind_direction_deg: 32.0, slm_delay_frames: 2}
+      - {id: r3d2_val_boiling, regime: boiling_stationary_wind, base_seed: 3940000, wind_speed_mps: 0.675, wind_direction_deg: 58.0, frozen_flow_rho: 0.995, slm_delay_frames: 2}
+      - {id: r3d2_val_combined, regime: boiling_varying_wind_noisy, base_seed: 3950000, wind_speed_mps: 0.475, wind_direction_deg: 82.0, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 225.0, slm_delay_frames: 2}
+  mechanism_audit:
+    reuse_exact_d1c_profiles_conditions_probes_and_seeds: true
+  split_unit: complete_turbulence_episode
+  reserved_s4d3_seed_base: 4000000
+
+critic_training:
+  state_size: 210
+  action_size: 11
+  hidden_size: 256
+  critic_networks_per_target: 2
+  learning_rate: 0.0003
+  batch_size: 256
+  maximum_updates: 20000
+  validation_interval_updates: 100
+  log_interval_updates: 100
+  early_stopping_patience_updates: 2000
+  initialization_seed_offset: 51000000
+  batch_order_seed_offset: 52000000
+  cuda_required: true
+  checkpoint_selection_metric: own_target_validation_mse
+  common_reference_metric: thirty_two_step_target_validation_mse
+
+gate:
+  require_every_policy_seed: true
+  actor_vs_zero_q_advantage_ci95_high: 0.0
+  min_online_q_excess_reduction_fraction: 0.80
+  min_pairwise_ranking_accuracy: 0.65
+  require_common_reference_mse_better_than_one_step: true
+  require_all_profiles_reported: true
+  confidence_interval: clustered_student_t
+  independent_cluster: condition_id_plus_episode_index
+  multiple_comparison_correction: holm_across_three_repairs_per_seed
+  multiple_comparison_alpha: 0.05
+
+selection:
+  eligible_methods: [n_step_16, n_step_32, td_lambda_095]
+  primary_score: mean_common_reference_validation_mse
+  one_standard_error_tie_break: n_step_16
+  if_none_pass: stop_before_full_rl_and_design_separate_conservative_critic
+
+alignment:
+  tolerance: 0.000005
+  require_exact_d1c_mechanism_state_regeneration: true
+
+quick:
+  policy_seeds: [9301]
+  profile_ids: [nominal]
+  probe_steps: [0, 4]
+  development:
+    episodes_per_condition: 2
+    conditions:
+      - {id: r3d2_quick_dev, regime: boiling_stationary_wind, base_seed: 3960000, wind_speed_mps: 0.575, wind_direction_deg: 52.0, frozen_flow_rho: 0.995, slm_delay_frames: 2}
+  validation:
+    episodes_per_condition: 2
+    conditions:
+      - {id: r3d2_quick_val, regime: boiling_stationary_wind, base_seed: 3970000, wind_speed_mps: 0.625, wind_direction_deg: 64.0, frozen_flow_rho: 0.995, slm_delay_frames: 2}
+  mechanism_audit:
+    episodes_per_condition: 2
+    conditions:
+      - {id: r3d2_quick_audit, regime: boiling_stationary_wind, base_seed: 3980000, wind_speed_mps: 0.55, wind_direction_deg: 70.0, frozen_flow_rho: 0.995, slm_delay_frames: 2}
+  maximum_updates: 8
+  validation_interval_updates: 2
+  log_interval_updates: 2
+  early_stopping_patience_updates: 8
+  batch_size: 4
+
+outputs:
+  directory: outputs/s4_r3_multistep_critic_repair_v1
+  quick_directory: outputs/s4_r3_multistep_critic_repair_v1_quick_v2
+
+tracked_source_files:
+  - scripts/train_s4_r3_multistep_critics.py
+  - src/runtime.py
+  - src/training_progress.py
+  - src/rl/s4_r3_multistep_critic_repair.py
+  - src/rl/s4_r3_multistep_critic_training.py
+  - src/rl/s4_r3_multistep_target_diagnostic.py
+  - src/rl/s4_r3_critic_source_diagnostic.py
+  - src/rl/s4_r3_failure_diagnostic.py
+  - src/rl/s4_r3_student_anchored_sac.py
+  - src/rl/student_anchored_control.py
+  - src/rl/residual_control.py
+  - src/rl/residual_sac.py
+  - src/rl/s4_training.py
+  - src/simulation/config.py
+  - src/simulation/env.py
+  - src/simulation/hardware_effects.py
+  - src/simulation/robust_control.py
+  - src/simulation/turbulence.py
+  - configs/experiments/s4_r3_multistep_critic_repair_design_v1.yaml
+  - docs/S4-D2-R3-D1-C多步目标偏差曲线审计记录.md
+  - docs/S4-D2-R3-D2-A多步评论家修复实验计划.md

@@ -1,0 +1,76 @@
+# 不可执行的增补设计；用户批准额外预算后再实现独立入口。
+stage: S4-D2-R4-1B1-R1
+design_only: true
+runnable: false
+status: AWAITING_BUDGET_APPROVAL
+entrypoint: null
+design_document: docs/S4-D2-R4-1B1-R1动作差值监督增补设计.md
+upstream_summary: outputs/s4_r4_response_attribution_v1/summary.json
+upstream_summary_sha256: 334bc2da8e685dbd38c8e5f011c81727b50e819e1dec6852110e27cb837c453f
+parent_config: configs/experiments/s4_r4_dynamics_v1.yaml
+data:
+  reuse_existing_training_weather: true
+  training_family_starts: [3760000, 3760256, 3760512]
+  per_family: 32
+  profiles: 6
+  probe_steps: [0, 80, 160]
+  high_modes: 11
+  horizon: 8
+  new_training_transitions: 410112
+  training_action_pairs: 38016
+  new_independent_weather: 0
+  development_source: outputs/s4_r4_action_response_v1
+  development_used_for_training: false
+  independent_confirmation_access: false
+models:
+  source: outputs/s4_r4_dynamics_v1
+  members: 3
+  arms: [absolute_only, absolute_plus_delta]
+  trainable: [gru, head]
+  frozen: [linear, original_normalization]
+  history_frames: 8
+  hidden_size: 64
+loss:
+  trajectory_weight: 1.0
+  absolute_weight: 1.0
+  delta_weight_by_arm: [0.0, 1.0]
+  delta_scale_source: all_training_pairs_rms_before_updates
+  delta_scale_floor: 0.00001
+  paired_rollout: own_predicted_observations_and_commands
+  privileged_future_commands: false
+training:
+  updates_per_member_per_arm: 2000
+  total_updates: 12000
+  trajectory_batch: 64
+  pair_batch: 16
+  optimizer: Adam
+  learning_rate: 0.0001
+  gradient_clip: 1.0
+  evaluation_interval: 500
+  primary_checkpoint: final_2000_only
+  identical_sampling_between_arms: true
+  training_model_forward_samples: 9216000
+  development_direction_forward_samples: 7630848
+  prediction_error_evaluation_cost: separately_recorded_at_implementation
+evaluation:
+  primary: absolute_plus_delta_ensemble
+  comparator: absolute_only_ensemble
+  preserve_startup_and_original_noise_thresholds: true
+  balanced_accuracy_min: 0.60
+  ci95_lower_exclusive: 0.50
+  min_identifiable_weather: 50
+  accuracy_gain_vs_comparator_ci95_lower_exclusive: 0.0
+  h8_error_reduction_vs_linear_and_persistence: 0.05
+  bootstrap_replicates: 20000
+  bootstrap_unit: weather_stratified_family
+boundary:
+  formal_owner: user_ide
+  device: cuda
+  automatic_retry: false
+  budget_is_additional_not_existing_policy_rounds: true
+  max_revision_attempts: 1
+  original_b1_status: ACTION_DIRECTION_FAIL
+  rl_updates: 0
+  mpc_evaluation: false
+  real_slm_actions: false
+  s4d3_access: false

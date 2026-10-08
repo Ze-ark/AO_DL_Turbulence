@@ -1,0 +1,222 @@
+metadata:
+  stage: S4-D2-R3-D1
+  purpose: read_only_student_anchored_sac_failure_mechanism_diagnostic
+  hypothesis: the_negative_rl_increment_can_be_separated_into_direction_amplitude_critic_or_reward_failure
+  user_authorized_next_stage: true
+  allow_training: false
+  allow_checkpoint_updates: false
+  allow_reward_change: false
+  allow_algorithm_change: false
+  allow_gate_relaxation: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+upstream_r3:
+  summary: outputs/s4_student_anchored_sac_r3_v1/summary.json
+  summary_sha256: 237376517ae90e24da1dd8355744222f493b74f053d5276e18e8b53b753c27aa
+  preflight: outputs/s4_student_anchored_sac_r3_v1/preflight.json
+  preflight_sha256: b4b78092af1db2503b39ae867933a723df117e8964d785b15f6c392126c717e2
+  effective_config: outputs/s4_student_anchored_sac_r3_v1/effective_config.json
+  effective_config_sha256: 15943ee670b0c1e1b38ea2c4b98df7250a51ef37eca8979691c0dc78fc160de3
+  source_manifest: outputs/s4_student_anchored_sac_r3_v1/source_manifest.json
+  source_manifest_sha256: 7695468f76a4225e862a4529ec49361acfccc50144d61d4a49b7140cb75b00f6
+  experiment_config: configs/experiments/s4_student_anchored_sac_r3_v1.yaml
+  experiment_config_sha256: c27c3d8b687d9bd5248998b8964ba77fa29cba0279e80dec6b964e325f9be761
+  required_status: completed_pending_independent_audit
+  required_development_gate: FAIL
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+environment_config_sha256: c14ddc5cf7c21a586cabdfa2554f0f1fb9e7781d2ea990d9e047885e957f09e5
+hardware_profile_source: configs/experiments/s4_hardware_stress_v1.yaml
+hardware_profile_source_sha256: ea254b082b89ded36672244606cc464fce92230be4a98d0bf1456b51b2ba6488
+
+representation:
+  id: zernike_21_added_11
+  kind: zernike
+  num_modes: 21
+  anchor_modes: 10
+  output_modes: 11
+  pseudoinverse_rcond: 0.00001
+
+frozen_controller:
+  active_anchor_modes: 10
+  parameters:
+    gain: 0.25
+    leak: 0.10
+    tracking_gain: 0.50
+    max_request_step_rad: 0.15
+
+student_anchor:
+  hidden_size: 256
+  deployment_scale: 0.50
+
+policy_observation:
+  history_frames: 4
+  state_size: 210
+  include_future_truth: false
+
+action:
+  residual_action_limit_rad: 0.05
+  correction_component_limit_rad: 0.0125
+  final_action_step_limit_rad: 0.15
+  total_budget_anchor_modes: 10
+
+teacher:
+  preview_horizon_frames: 2
+
+reward:
+  measured_power_weight: 1.0
+  residual_action_weight: 0.01
+  violation_weight: 0.50
+
+checkpoints:
+  - arm: student_backbone
+    policy_seed: 9301
+    student_id: aggregate_mlp_seed_8201
+    path: outputs/s4_student_anchored_sac_r3_v1/student_backbone/policy_seed_9301/checkpoint_best.pt
+    sha256: 01279388cf688e2b9dc0110b0e81416a703be7a6ee8d6b7ce3b8109eebbfab92
+    student_path: outputs/s4_student_state_aggregation_v1/student_aggregate/checkpoints/mlp_seed_8201_best.pt
+    student_sha256: 474177735a7fb2f465e671a44e0b085dc4c77fbd6af839f13122c581f3efd5e8
+  - arm: student_backbone
+    policy_seed: 9302
+    student_id: aggregate_mlp_seed_8202
+    path: outputs/s4_student_anchored_sac_r3_v1/student_backbone/policy_seed_9302/checkpoint_best.pt
+    sha256: 8ec7c9bdf907541c98dafbd6da5c4707cc184f3d24a5f89636d988c20001ac56
+    student_path: outputs/s4_student_state_aggregation_v1/student_aggregate/checkpoints/mlp_seed_8202_best.pt
+    student_sha256: b3587546f8ea3b41a7166ac533f20a2af4cca704e963ff607dbba5d7c7093ec2
+  - arm: student_backbone
+    policy_seed: 9303
+    student_id: aggregate_mlp_seed_8203
+    path: outputs/s4_student_anchored_sac_r3_v1/student_backbone/policy_seed_9303/checkpoint_best.pt
+    sha256: 71b3811ac44930bb0d40a017c0756c8bbb378bf42ed9f133abdcc8ea76142783
+    student_path: outputs/s4_student_state_aggregation_v1/student_aggregate/checkpoints/mlp_seed_8203_best.pt
+    student_sha256: e7c6bc1720265ed22facb28fc5f6784249b8c70ec120aff58048dbf4a193fb4e
+  - arm: random_backbone
+    policy_seed: 9301
+    student_id: aggregate_mlp_seed_8201
+    path: outputs/s4_student_anchored_sac_r3_v1/random_backbone/policy_seed_9301/checkpoint_best.pt
+    sha256: ed30e446f5e16f45543bf4aca2fa5b6f0e9375b53ffc7b6a67b06b62f54530ff
+    student_path: outputs/s4_student_state_aggregation_v1/student_aggregate/checkpoints/mlp_seed_8201_best.pt
+    student_sha256: 474177735a7fb2f465e671a44e0b085dc4c77fbd6af839f13122c581f3efd5e8
+  - arm: random_backbone
+    policy_seed: 9302
+    student_id: aggregate_mlp_seed_8202
+    path: outputs/s4_student_anchored_sac_r3_v1/random_backbone/policy_seed_9302/checkpoint_best.pt
+    sha256: 589e2912b25f6961f77d46f8bf5047b21511aaef456e5c463250fc905733bdbe
+    student_path: outputs/s4_student_state_aggregation_v1/student_aggregate/checkpoints/mlp_seed_8202_best.pt
+    student_sha256: b3587546f8ea3b41a7166ac533f20a2af4cca704e963ff607dbba5d7c7093ec2
+  - arm: random_backbone
+    policy_seed: 9303
+    student_id: aggregate_mlp_seed_8203
+    path: outputs/s4_student_anchored_sac_r3_v1/random_backbone/policy_seed_9303/checkpoint_best.pt
+    sha256: 5d9e3ff999d49f3377526ccf064d6f30ec2c332397072e79dc00af186b4007fa
+    student_path: outputs/s4_student_state_aggregation_v1/student_aggregate/checkpoints/mlp_seed_8203_best.pt
+    student_sha256: e7c6bc1720265ed22facb28fc5f6784249b8c70ec120aff58048dbf4a193fb4e
+
+variants:
+  - {id: reverse_full, scale: -1.0}
+  - {id: reverse_half, scale: -0.5}
+  - {id: student_only, scale: 0.0}
+  - {id: forward_quarter, scale: 0.25}
+  - {id: forward_half, scale: 0.5}
+  - {id: forward_full, scale: 1.0}
+
+profile_ids:
+  - nominal
+  - delay_3
+  - settling_050
+  - registration_moderate
+  - registration_severe
+  - combined_moderate
+
+diagnostic_conditions:
+  - id: r3d1_frozen
+    regime: frozen_stationary
+    base_seed: 3700000
+    wind_speed_mps: 0.525
+    wind_direction_deg: 30.0
+    slm_delay_frames: 2
+  - id: r3d1_boiling
+    regime: boiling_stationary_wind
+    base_seed: 3710000
+    wind_speed_mps: 0.625
+    wind_direction_deg: 45.0
+    frozen_flow_rho: 0.995
+    slm_delay_frames: 2
+  - id: r3d1_combined
+    regime: boiling_varying_wind_noisy
+    base_seed: 3720000
+    wind_speed_mps: 0.50
+    wind_direction_deg: 85.0
+    frozen_flow_rho: 0.995
+    wind_speed_modulation_fraction: 0.15
+    wind_direction_modulation_deg: 15.0
+    wind_modulation_period_frames: 80
+    wind_modulation_phase_deg: 270.0
+    slm_delay_frames: 2
+
+diagnostic:
+  episodes_per_condition: 16
+  steps: 200
+  compare_on_identical_episode_seeds: true
+  deterministic_actor: true
+  persist_per_episode_records: true
+
+interpretation_thresholds:
+  positive_power_ci_low: 0.0
+  negative_power_ci_high: 0.0
+  low_actor_teacher_cosine: 0.10
+  low_same_direction_fraction: 0.50
+  critic_preference_margin: 0.0
+  reward_conflict_margin: 0.0
+  zero_alignment_tolerance: 0.000005
+  max_violation_fraction: 0.05
+
+# 复用R3动作合成器所需的数值比较容差；不改变任何科学门槛。
+gate:
+  projection_tolerance_rad: 0.0000001
+
+protected_seed_ranges:
+  - {id: all_training_and_validation, start_inclusive: 0, end_exclusive: 3700000}
+  - {id: sealed_s4d3, start_inclusive: 4000000, end_exclusive: 5000000}
+
+quick:
+  checkpoint_arms: [student_backbone, random_backbone]
+  policy_seeds: [9301]
+  variants: [reverse_full, student_only, forward_half, forward_full]
+  profile_ids: [nominal]
+  episodes_per_condition: 2
+  steps: 16
+  diagnostic_conditions:
+    - id: r3d1_quick
+      regime: boiling_stationary_wind
+      base_seed: 3799000
+      wind_speed_mps: 0.575
+      wind_direction_deg: 52.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+
+outputs:
+  directory: outputs/s4_r3_failure_diagnostic_v1
+  quick_directory: outputs/s4_r3_failure_diagnostic_v1_quick_r2
+
+tracked_source_files:
+  - scripts/diagnose_s4_r3_failure.py
+  - src/runtime.py
+  - src/training_progress.py
+  - src/rl/s4_r3_failure_diagnostic.py
+  - src/rl/s4_r3_student_anchored_sac.py
+  - src/rl/student_anchored_control.py
+  - src/rl/residual_control.py
+  - src/rl/residual_sac.py
+  - src/rl/s4_closed_loop_shift.py
+  - src/rl/s4_high_order_learnability.py
+  - src/rl/s4_representation_capacity.py
+  - src/rl/s4_training.py
+  - src/simulation/config.py
+  - src/simulation/controllers.py
+  - src/simulation/env.py
+  - src/simulation/hardware_effects.py
+  - src/simulation/modes.py
+  - src/simulation/robust_control.py
+  - src/simulation/turbulence.py

@@ -1,0 +1,96 @@
+metadata:
+  stage: S4-D2-R3-D1-B
+  experiment_id: AO-S4-D2-R3-D1-B-CRITIC-SOURCE
+  version_label: s4d2_r3_d1b_critic_source_v1
+  purpose: separate_soft_bellman_misfit_deployment_objective_mismatch_and_historical_action_support_proxy
+  hypothesis: deployment_q_ranking_failure_may_come_from_bellman_misfit_or_objective_mismatch_and_may_associate_with_historical_action_support
+  user_authorized_next_stage: true
+  allow_training: false
+  allow_checkpoint_updates: false
+  allow_reward_change: false
+  allow_algorithm_change: false
+  allow_gate_relaxation: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+upstream_d1a:
+  summary: outputs/s4_r3_critic_calibration_v2/summary.json
+  summary_sha256: f3cfc5708a68d8bbe62d646d6133e4e67b3d44b88d96c69743a88e01351efa14
+  preflight: outputs/s4_r3_critic_calibration_v2/preflight.json
+  preflight_sha256: 807fd244e65c6285c9e45edbb883acbc26999e926dd2874564b51d4f6caa9991
+  effective_config: outputs/s4_r3_critic_calibration_v2/effective_config.json
+  effective_config_sha256: cd56fda8ea34b58226c7fd65454594a9e7493bb3c41358245a3d7073c615e3e6
+  source_manifest: outputs/s4_r3_critic_calibration_v2/source_manifest.json
+  source_manifest_sha256: d34b1731a2c0fe420401b6d5f0926f3645bad0412be3d3e1cbe42d3367eecef7
+  probe_records: outputs/s4_r3_critic_calibration_v2/probe_records.csv
+  probe_records_sha256: c9741a818c2d236156a28807165cf38f03ca8a6e4a97e5d59311d8353bb33ab5
+  episode_records: outputs/s4_r3_critic_calibration_v2/episode_records.csv
+  episode_records_sha256: 3c620061be665835574adc450b86b697d06b86d2cd88bfb938de681fcaab095c
+  experiment_config: configs/experiments/s4_r3_critic_calibration_v2.yaml
+  experiment_config_sha256: 2c7095868dff7c446f757396407e0b38deca01bf2d07495069a4e665d7a48707
+  required_interpretation_status: CRITIC_DEPLOYMENT_RANKING_FAILURE_CONFIRMED
+  required_probe_rows: 1620
+  required_episode_rows: 12960
+
+diagnostic:
+  episode_length_steps: 200
+  target_samples: 64
+  target_sampling_seed_base: 910000000
+  target_sampling: antithetic_gaussian_reparameterization
+  history_support_kind: saved_policy_snapshot_proxy_not_replay_support
+  history_checkpoint_names:
+    - checkpoint_000100000.pt
+    - checkpoint_000200000.pt
+    - checkpoint_000300000.pt
+    - checkpoint_000400000.pt
+    - checkpoint_000499200.pt
+
+alignment:
+  reuse_exact_d1a_v2_physical_seeds: true
+  q_tolerance: 0.000005
+
+interpretation_thresholds:
+  positive_ci_low: 0.0
+  negative_ci_high: 0.0
+  minimum_consistent_rank_accuracy: 0.50
+  minimum_consistent_top_agreement: 0.50
+
+quick:
+  checkpoint_arms: [student_backbone, random_backbone]
+  policy_seeds: [9301]
+  profile_ids: [nominal]
+  episodes_per_condition: 2
+  probe_steps: [0, 8]
+  target_samples: 8
+  diagnostic_conditions:
+    - id: r3d1b_quick
+      regime: boiling_stationary_wind
+      base_seed: 3898000
+      wind_speed_mps: 0.575
+      wind_direction_deg: 62.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+
+outputs:
+  directory: outputs/s4_r3_critic_source_v1
+  quick_directory: outputs/s4_r3_critic_source_v1_quick
+
+tracked_source_files:
+  - scripts/diagnose_s4_r3_critic_source.py
+  - src/runtime.py
+  - src/training_progress.py
+  - src/rl/s4_r3_critic_source_diagnostic.py
+  - src/rl/s4_r3_critic_calibration.py
+  - src/rl/s4_r3_failure_diagnostic.py
+  - src/rl/s4_r3_student_anchored_sac.py
+  - src/rl/student_anchored_control.py
+  - src/rl/residual_control.py
+  - src/rl/residual_sac.py
+  - src/rl/s4_closed_loop_shift.py
+  - src/rl/s4_representation_capacity.py
+  - src/rl/s4_training.py
+  - src/simulation/config.py
+  - src/simulation/env.py
+  - src/simulation/hardware_effects.py
+  - src/simulation/robust_control.py
+  - src/simulation/turbulence.py

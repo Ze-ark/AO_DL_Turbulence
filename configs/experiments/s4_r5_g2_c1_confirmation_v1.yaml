@@ -1,0 +1,12 @@
+stage: S4-D2-R5-G2-C1
+purpose: frozen_candidate_selector_fresh_weather_independent_confirmation
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+selector: {kind: current, candidate_epsilon: 0.1, deployment_scale: 1.75, selection: argmax_with_original_zero, checkpoint: last, future_safety_filter: false}
+data: {seed_base: 7800000, seed_stride: 10, weather_count: 64, policy_initializations: 3, scorer_seeds: [7564000, 7564001, 7564002], episode_length: 200, selector_start_step: 25, fold_assignment: weather_index_modulo_4}
+quick: {seed_base: 7810000, seed_stride: 10, weather_count: 1, policy_initializations: 1, scorer_seeds: [7564000], episode_length: 32, selector_start_step: 25, fold_assignment: weather_index_modulo_4, technical_only: true}
+statistics: {bootstrap_seed: 7820000, bootstrap_repeats: 20000, interval: 0.95, cluster: complete_weather, stratification: assigned_scorer_fold, interval_scope: conditional_on_frozen_models_no_retraining_uncertainty}
+thresholds: {minimum_relative_gain: 0.01, maximum_safety_increase: 0.001}
+historical_development_reference: {minimum_relative_gain: 0.0105, gate_for_this_confirmation: false}
+output_directory: outputs/s4_r5_g2_c1_confirmation_v1
+quick_directory: outputs/s4_r5_g2_c1_confirmation_v1_quick
+boundary: {training_updates: 0, old_confirmation_access: false, real_slm_actions: false, historical_gate_reclassification: false, automatic_retry: false, formal_runs_per_version: 1}

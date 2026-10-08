@@ -1,0 +1,21 @@
+stage: S4-D2-R5-G1-D3
+purpose: development_only_nominal_bridge_on_d2_weather
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+g1_d2_config: configs/experiments/s4_r5_g1_d2_factorial_v1.yaml
+g1_d2_config_sha256: ab092f22b9a7649ed5a43f1d4fa185c11d49fccdce9c6f5531200f264f9db315
+g1_d2_entry_sha256: 5ab735ef8195929f622e63e48dc2d49e6f6beedfd0bd4c74c0cb8f2de52ceaec
+g1_d2_output: outputs/s4_r5_g1_d2_factorial_v1
+g1_d2_output_hashes:
+  summary.json: ebcc3ceef90e648cffeb631be38297cc1ccc18ec7d449da7959666779cf0ceed
+  records.jsonl: b5a7d80c6e0d178fc66545bde3861068f4e126469153cae9a19ba64ebd5f1d56
+  progress.jsonl: 20c808fe688a8ad914022d0c9dfeda8a7d3ba2f624daeef77bd91a4c5cc70150
+  stream_manifest.json: 09fb204e7fdcab9c24426fe96bc0324b21dd378c7803550bf1edb8919e69a80c
+  SUCCESS.json: 72bffaf8570db17a333c7cc826052eda5832115fcf913fce368c3af6acabbaa5
+selected_scale: 1.75
+wind_speed_multiplier: 1.10
+data: {seed_base: 6700000, seed_stride: 10, weather_count: 24, episode_length: 200}
+quick: {seed_base: 6720000, weather_count: 1, episode_length: 16}
+statistics: {bootstrap_seed: 6733456, bootstrap_repeats: 5000}
+output_directory: outputs/s4_r5_g1_d3_nominal_bridge_v1
+quick_directory: outputs/s4_r5_g1_d3_nominal_bridge_v1_quick
+boundary: {confirmation_access: false, training_updates: 0, real_slm_actions: false, automatic_retry: false, g1_d2_results_read_only: true, reuse_d2_development_weather: true}

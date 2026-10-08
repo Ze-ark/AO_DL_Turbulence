@@ -1,0 +1,29 @@
+stage: S4-D2-R4-0
+purpose: diagnostic_interface_smoke_only
+runtime: {device: cuda, require_cuda: true}
+design: configs/experiments/s4_r4_model_based_design_v1.yaml
+design_sha256: 1dbf6f5062482ec09d9809451e32b68d26ae9928e5e58517617482d7ba7422c7
+environment_config: configs/environment/s1_taylor_v1.yaml
+output_directory: outputs/s4_r4_interface_smoke_v1
+history_frames: 8
+steps: 16
+episodes_per_case: 4
+pulse_step: 2
+pulse_mode: 10
+observation_noise_std_rad: 0.02
+response_tolerance_rad: 0.000001
+nominal_calibration:
+  delay_frames: 2
+  settling_fraction: 0.5
+  modal_slew_rad: 0.15
+  provenance: simulation_nominal_assumption_not_hardware_calibrated
+cases:
+  - {id: delay0, base_seed: 3770000, delay_frames: 0, settling_fraction: 1.0}
+  - {id: delay3, base_seed: 3770100, delay_frames: 3, settling_fraction: 1.0}
+  - {id: delay3_settling50, base_seed: 3770200, delay_frames: 3, settling_fraction: 0.5}
+boundary:
+  training_updates: 0
+  scientific_ranking: false
+  real_slm_actions: false
+  s4d3_access: false
+  automatic_retry: false

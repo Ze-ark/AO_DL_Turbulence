@@ -1,0 +1,46 @@
+# O2-C：冻结模型的人工全息观测开发对照，不训练、不做独立确认。
+schema: observation_bridge_o2_development_v1
+scope: synthetic_holography_development_not_confirmation
+device: cuda
+design_path: configs/experiments/observation_bridge_o2_design_v1.json
+design_sha256: 08da140eb29d86ada740c33e4f2edfc1719a2aeba6e58c15964bfbc6608625e9
+short_loop_summary: outputs/observation_bridge_o2_closed_loop_quick_v1/summary.json
+short_loop_summary_sha256: 700c353763ea260317f8e76460bbdfa8162a56451ef4ef6fa244cd586d29ef23
+optics_config: configs/experiments/observation_bridge_o2_optics_v1.yaml
+parent: configs/experiments/s4_r5_policy_training_v1.yaml
+data: {weather_seed_base: 8400000, weather_count: 8, weather_seed_stride: 10, episode_length: 200}
+quick: {weather_seed_base: 8460000, weather_count: 1, weather_seed_stride: 10, episode_length: 28}
+family_ids: [frozen, boiling, varying]
+camera_conditions:
+  - {id: noiseless, read_noise_std: 0.0}
+  - {id: small_read_noise, read_noise_std: 0.001}
+camera_seed_offset: 170000000
+camera_noise_distribution: additive_gaussian_then_clip_negative_intensity_to_zero
+camera_draw_including_noiseless: true
+batch_size: 3
+controller_branches: 13
+policy_initializations: [0, 1, 2]
+scorer_seeds: [7564000, 7564001, 7564002]
+selector_start_step: 25
+integrator: {gain: 0.15, leak: 0.1, tracking_gain: 0.5}
+policy_scale: 1.75
+candidate_epsilon: 0.1
+thresholds:
+  ideal_modal_error_max_rad: 0.001
+  noisy_modal_rmse_mean_rad: 0.01
+  noisy_modal_rmse_p95_rad: 0.02
+  replay_max_absolute_error: 1.0e-6
+  invalid_observations: 0
+  failed_or_truncated_episodes: 0
+statistics: {cluster: complete_weather, stratification: fixed_scorer_fold, bootstrap_seed: 8490000, bootstrap_repeats: 5000, interval: 0.95}
+gain_threshold: null
+output_directory: outputs/observation_bridge_o2_development_v1
+quick_directory: outputs/observation_bridge_o2_development_v1_quick
+boundary:
+  training_updates: 0
+  independent_confirmation: false
+  old_confirmation_trajectory_access: false
+  real_data_access: false
+  real_slm_actions: false
+  historical_gate_reclassification: false
+  automatic_retry: false

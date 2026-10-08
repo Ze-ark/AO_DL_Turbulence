@@ -1,0 +1,36 @@
+stage: S4-D2-R5-G2-D2
+purpose: equal_budget_warm_start_train_deploy_action_mapping_comparison
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+g2_d1_config: configs/experiments/s4_r5_g2_d1_action_mapping_v1.yaml
+g2_d1_config_sha256: c2bf5f34d251cb5e52793952cde4e604a595f8e6073228d9b8b6750d4d0cf81c
+g2_d1_entry_sha256: de400aec9ec1c826a630a2fa2f3693f285288880aabfe2716a26227da3f26055
+g2_d1_output: outputs/s4_r5_g2_d1_action_mapping_v1
+g2_d1_output_hashes:
+  summary.json: f73a09d1c03464dd306bfd52b7e4708a85bec523ab8f1a2b2df0f07600b0a9f7
+  records.jsonl: b3d309c846b1eee6d31d2ca9340a64094a75a55da7afa2e058fea94bc495a066
+  progress.jsonl: 0026a709df75df0eec5b7ccec2e3dbcb82e3a3d8f193b775435ae31c45889d11
+  stream_manifest.json: 227679b3cd62765938a503cb907c0e71b451c2d30ae45e017638579a8bfa9f80
+  SUCCESS.json: 72c2f36131a14a7dae6db298a774fa626f9fd250c9d57ca8e5612c6a9a7222f8
+source_bundle_sha256: ccdc31faaa155361d8bd3e19ffc5bb82705f425a0ef4c7f58dd7f70831efd956
+arms:
+  - {id: train_scale_1, training_scale: 1.0, deployment_scale: 1.75}
+  - {id: train_scale_1_75, training_scale: 1.75, deployment_scale: 1.75}
+data:
+  train_seed_base: 7000000
+  seed_stride: 3
+  paired_weather_count: 256
+  episode_length: 200
+  sensor_seed_offset: 50000000
+training:
+  initializations: 3
+  updates_per_arm_initialization: 512
+  learning_rate: 0.00003
+  gradient_norm_limit: 1.0
+  checkpoint_interval_updates: 64
+  gradient_checkpointing: false
+objective: {action_weight: 0.01, smooth_weight: 0.001, discount: 1.0}
+quick: {train_seed_base: 7010000, initializations: 1, updates_per_arm_initialization: 2, episode_length: 16}
+reserved_not_accessed: {development_seed_base: 7100000, confirmation_seed_base: 7200000}
+output_directory: outputs/s4_r5_g2_d2_matched_training_v1
+quick_directory: outputs/s4_r5_g2_d2_matched_training_v1_quick_r1
+boundary: {confirmation_access: false, development_evaluation_access: false, real_slm_actions: false, automatic_retry: false, historical_results_read_only: true}

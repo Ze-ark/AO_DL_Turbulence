@@ -1,0 +1,25 @@
+# A10可运行配置；正式确认由用户在IDE启动。
+stage: S4-D2-R3-D2-A10
+runnable: true
+design: configs/experiments/s4_r3_h16_veto_gate_confirmation_design_v1.yaml
+design_sha256: 5fc137c164206563a704271330149a9733fdb512ead79f6c068aa954e8121a77
+runtime: {device: cuda, require_cuda: true, deterministic_algorithms: true}
+boundary:
+  supervised_updates: 0
+  actor_updates: 0
+  critic_updates: 0
+  alpha_updates: 0
+  student_updates: 0
+  full_rl_trained: false
+  closed_loop_rollout: false
+  s4d3_accessed: false
+  real_slm_actions: false
+frozen_inputs:
+  docs/S4-D2-R3-D2-A10有害动作否决开关独立确认计划.md: 74492b7e23fdf552ca4fd6e232e3a310324ea6d1586d4b86ee4b4bd516cb6917
+  docs/S4-D2-R3-D2-A9固定时点与单任务对照正式审计记录.md: 873e10caa97f2c33aef1fa2688f7a295b29b8718043933b296713b2355ca4170
+tracked_source_files:
+  - configs/experiments/s4_r3_h16_veto_gate_confirmation_v1.yaml
+  - scripts/confirm_s4_r3_h16_veto_gate.py
+  - src/rl/s4_r3_h16_veto_gate_contract.py
+  - src/rl/s4_r3_h16_veto_gate_confirmation.py
+  - tests/test_s4_r3_h16_veto_gate_confirmation.py

@@ -1,0 +1,139 @@
+metadata:
+  stage: S4-D2-R3-D2-A8-D2
+  experiment_id: AO-S4-D2-R3-D2-A8-D2-GRADIENT-SHIFT
+  version_label: s4d2_r3_d2a8_d2_gradient_shift_v1
+  diagnostic_only: true
+  post_hoc_mechanism_diagnostic: true
+  allow_saved_gradient_read: true
+  allow_frozen_dataset_read: true
+  allow_checkpoint_loading: false
+  allow_gradient_recomputation: false
+  allow_training: false
+  allow_optimizer_updates: false
+  allow_new_data_generation: false
+  allow_independent_test_access: false
+  allow_full_rl_training: false
+  allow_original_critic_updates: false
+  allow_actor_updates: false
+  allow_alpha_updates: false
+  allow_student_updates: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+design_contract:
+  plan: docs/S4-D2-R3-D2-A8-D2训练验证梯度翻转来源诊断计划.md
+  plan_sha256: 109148cfb0ad337c24e8fa9f53ea30d6c7695ddcfb3701a9da49a2e0d9cfe767
+  audit: docs/S4-D2-R3-D2-A8-D1共享主干梯度冲突诊断审计记录.md
+  audit_sha256: 7ca0ce884807136ecab3b6fc43dfe02e8caee1d2b27b913ba471a2be29f3d233
+
+upstream_d1:
+  summary: outputs/s4_r3_h16_gradient_conflict_v1/summary.json
+  summary_sha256: a8f598be2b5dc3d2bc8f0fb598f7f90585ef9f81312d0cdcb1c6225699a2328c
+  success: outputs/s4_r3_h16_gradient_conflict_v1/SUCCESS.json
+  success_sha256: 7002e3c9a58a10c69867da7f15046f73a4f23934afeeaef55a0cd59d5735fb21
+  episode_metrics: outputs/s4_r3_h16_gradient_conflict_v1/episode_gradient_metrics.csv
+  episode_metrics_sha256: ccef8aa23dba27feefab7c5420098d0efa5ae75db3d41c042f21e66538a2cc3b
+  arm_summaries: outputs/s4_r3_h16_gradient_conflict_v1/arm_summaries.csv
+  arm_summaries_sha256: 10b00c13eed92ae6f86ec75c253a6bca5963dca4bac06aed44cd4fbe2ef916e8
+  head_comparisons: outputs/s4_r3_h16_gradient_conflict_v1/head_comparisons.csv
+  head_comparisons_sha256: c8de29be978b1acfa815e45348c0f493c98991e28c82f69c4187bef25edc50b4
+  failure_comparisons: outputs/s4_r3_h16_gradient_conflict_v1/failure_seed_comparisons.csv
+  failure_comparisons_sha256: 7cf889d29458953e7408731787677bca6d97a138e7276ec90d752f30459fe7d2
+  input_manifest: outputs/s4_r3_h16_gradient_conflict_v1/input_manifest.json
+  input_manifest_sha256: 7c825eb4a795ff91075f7d0bb1fa4c3c6a9a26e0976da0c7d58e9e5a6e081ec5
+  source_manifest: outputs/s4_r3_h16_gradient_conflict_v1/source_manifest.json
+  source_manifest_sha256: 6379b6296ed3be4db023f3784c707d42a194a14128abff1e403405422803dc27
+  required_status: SHARED_TRUNK_CONFLICT_NOT_CONFIRMED
+  required_episode_records: 2592
+
+design:
+  policy_seeds: [9301, 9302, 9303]
+  arms: [shared, split]
+  splits: [training, validation]
+  feature_size: 221
+  pairs_per_episode: 18
+  condition_families: [boiling, combined, frozen]
+  target_descriptors:
+    - positive_fraction
+    - reward_mean
+    - reward_abs_mean
+    - reward_std
+    - power_mean
+    - power_abs_mean
+    - power_std
+  statistical_unit: complete_episode_seed
+  validation_training_comparison: stratified_two_sample
+  matching:
+    methods: [target, feature]
+    within_condition_family: true
+    replacement: true
+    minimum_unique_match_fraction: 0.50
+    maximum_reuse_count: 4
+    minimum_gap_closure: 0.50
+
+datasets:
+  9301:
+    training:
+      path: outputs/s4_r3_h16_data_scaling_v1/datasets/seed_9301_large_pairs.pt
+      sha256: b777a3d0d7060d41421872f7c51b9012fc569af9ed3638b06c77dae1100819f2
+      episodes: 384
+      pairs: 6912
+    validation:
+      path: outputs/s4_r3_h16_data_scaling_v1/datasets/seed_9301_validation_pairs.pt
+      sha256: 23d0dee3d7fdac8c86dcc7f4e58b39964b63457125db44667da1c86b316d9da3
+      episodes: 48
+      pairs: 864
+  9302:
+    training:
+      path: outputs/s4_r3_h16_data_scaling_v1/datasets/seed_9302_large_pairs.pt
+      sha256: 4d95637cef36c1efedee4153c763e47b7e21f4db2f02c3130f34d9d640d2b411
+      episodes: 384
+      pairs: 6912
+    validation:
+      path: outputs/s4_r3_h16_data_scaling_v1/datasets/seed_9302_validation_pairs.pt
+      sha256: a94e281c075c4f9cc4ba51508f17b9eb5b243bb373df0984ab9b50720ff05db3
+      episodes: 48
+      pairs: 864
+  9303:
+    training:
+      path: outputs/s4_r3_h16_data_scaling_v1/datasets/seed_9303_large_pairs.pt
+      sha256: a3e42a7158f21c09704d778e4d7e7ee3e844cb7de2a042956532fd7bf401fa9b
+      episodes: 384
+      pairs: 6912
+    validation:
+      path: outputs/s4_r3_h16_data_scaling_v1/datasets/seed_9303_validation_pairs.pt
+      sha256: f1e5cc365c1bacca8cc407979c445b309f427323d571868c829334c06e2434ae
+      episodes: 48
+      pairs: 864
+
+comparison:
+  bootstrap_replicates: 20000
+  bootstrap_seed: 990000
+  familywise_alpha: 0.05
+  family_size: 24
+  distribution_permutation_family_size: 6
+  meaningful_cosine_shift: 0.20
+  meaningful_standardized_drift: 0.25
+  minimum_supporting_seeds: 2
+
+runtime:
+  device: cuda
+  require_cuda: true
+  deterministic_algorithms: true
+
+outputs:
+  directory: outputs/s4_r3_h16_gradient_shift_v1
+  quick_directory: outputs/s4_r3_h16_gradient_shift_v1_quick_v4
+
+quick:
+  policy_seeds: [9301]
+  episodes_per_condition: 3
+  bootstrap_replicates: 100
+
+tracked_source_files:
+  - configs/experiments/s4_r3_h16_gradient_shift_v1.yaml
+  - scripts/diagnose_s4_r3_h16_gradient_shift.py
+  - src/rl/s4_r3_h16_gradient_shift.py
+  - tests/test_s4_r3_h16_gradient_shift.py
+  - docs/S4-D2-R3-D2-A8-D2训练验证梯度翻转来源诊断计划.md
+  - docs/S4-D2-R3-D2-A8-D1共享主干梯度冲突诊断审计记录.md

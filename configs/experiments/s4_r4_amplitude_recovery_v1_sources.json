@@ -1,0 +1,8 @@
+{
+  "src/rl/r4_amplitude_recovery.py": "ded7d730d4f8ee70031fef3a443da983250896ef82f4f4a886527930c4edabc4",
+  "scripts/resume_s4_r4_amplitude_closed_loop.py": "7d9eda986b1cef05a5f960f15d48c04080cf7473eacc9acc90880961b770b500",
+  "configs/experiments/s4_r4_amplitude_recovery_v1.yaml": "10091bb761b2906af24841e0d3520c8c450cc30d3c3e982f7bf5a12a8312048d",
+  "configs/experiments/s4_r4_amplitude_recovery_v1_snapshot.json": "b7c7226499dc39b95339a7c2fe72db7dbb28556acda1e4415c43dde6e537837b",
+  "tests/test_r4_amplitude_recovery.py": "40a2a43094a40da3cd5517e69a73e8ebcbe88d251e4abdb758a177b1404cb80f",
+  "docs/S4-D2-R4-1B2持续力度恢复说明.md": "1c4cf109afa57830b41f27b1fd3fde7f2c0d2ce9b79fb9d4a353b5c01ee782bf"
+}

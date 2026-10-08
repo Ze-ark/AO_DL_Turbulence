@@ -1,0 +1,18 @@
+stage: S4-D2-R4-1B2-BASELINE-SELECTION
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+upstream: outputs/s4_r4_baseline_safety_v1
+upstream_sha256: be343743c297b0318203c89e30e3e38bc14dfb985ff6e2475115f9584516652d
+parent: configs/experiments/s4_r4_dynamics_v1.yaml
+candidate_config: configs/experiments/s4_r4_baseline_safety_v1.yaml
+output_directory: outputs/s4_r4_baseline_selection_v1
+quick_directory: outputs/s4_r4_baseline_selection_v1_quick
+development_family_starts: [3762048, 3762304, 3762560]
+per_family: 32
+batch_size: 16
+steps: 200
+reference_index: 9
+violation_increase_max: 0.001
+physical_transitions: 2073600
+ridge_forward_samples: 4147200
+quick: {per_family: 2, batch_size: 2, steps: 12, profiles: [nominal, delay_3]}
+boundary: {training_updates: 0, mpc_calls: 0, confirmation_access: false, s4d3_access: false, real_slm_actions: false}

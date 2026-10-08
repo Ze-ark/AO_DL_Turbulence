@@ -1,0 +1,27 @@
+stage: S4-D2-R4-1B2-D2-INDEPENDENT-CANDIDATE-CONFIRMATION
+parent: configs/experiments/s4_r4_dynamics_v1.yaml
+reselection_output: outputs/s4_r4_candidate_reselection_v1
+development_metrics: outputs/s4_r4_closed_loop_ranking_v3/metrics.pt
+# v1快速冒烟的物理计算完成后在保存种子元数据时失败；保留现场，修订版写入v2。
+output_directory: outputs/s4_r4_candidate_confirmation_v2
+source_files:
+  outputs/s4_r4_candidate_reselection_v1/summary.json: 6c0db49e6037adad97f28b4a5f00baf037cdd4804cf6b2a48ffdd349abaf3ce6
+  outputs/s4_r4_candidate_reselection_v1/SUCCESS.json: 7f4eb594a6eb751c767a6ff71f3bf9cce580a39ab32c2a0da8fe17356b5a9760
+  outputs/s4_r4_candidate_reselection_v1/artifact_manifest.json: e69387f3f81a08974f5f53e61c170a6a43885fc36e775461614d356082191671
+  outputs/s4_r4_closed_loop_ranking_v3/metrics.pt: 44149af394df2c5ec59e8e0798044478425bc6facecdc384da194a778bd1838c
+frozen_rule: ensemble_mean_safe_gate
+frozen_threshold: 0.0032300949096679688
+formal_starts: [3780000, 3780256, 3780512]
+quick_start: 3781000
+weather_per_family: 16
+batch_episodes: 16
+probe_steps: [8, 40, 100, 180]
+candidate_order: [zero, negative, half, selected, scaled_1p5]
+branch_order: [zero, original_selected, frozen_reselection]
+search_seed: 3789000
+bootstrap_seed: 3789901
+bootstrap_repeats: 20000
+physical_transitions: 79488
+max_model_forward_samples: 640687104
+training_updates: 0
+automatic_retry: false

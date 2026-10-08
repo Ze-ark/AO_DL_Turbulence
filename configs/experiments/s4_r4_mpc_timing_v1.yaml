@@ -1,0 +1,15 @@
+stage: S4-D2-R4-1B2-TIMING
+device: cuda
+diagnostic_only: true
+output_directory: outputs/s4_r4_mpc_timing_v1
+upstream: outputs/s4_r4_delta_supervision_v1
+summary_sha256: 0743feb4a454717bea1fcec407c2746047766ffa68b798cef4bf294050e85dc5
+parent: configs/experiments/s4_r4_dynamics_v1.yaml
+search: {horizon: 8, population: 128, iterations: 4, elites: 16, initial_std: 0.5, min_std: 0.05, smoothing: 0.1, discount: 0.99, action_cost: 0.01, disagreement: 1.0}
+starts: [0, 80, 160]
+seed: 3769300
+repeats: 2
+batch_size: 1
+physical_transitions: 0
+training_updates: 0
+formal_comparison_authorized: false

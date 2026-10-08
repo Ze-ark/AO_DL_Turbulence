@@ -1,0 +1,130 @@
+# 研究设计清单，不是可执行训练配置。中文说明见R4重设计文档。
+stage: S4-D2-R4
+design_only: true
+runnable: false
+status: DESIGN_READY
+entrypoint: null
+design_document: docs/S4-D2-R4模型式强化学习重设计.md
+upstream:
+  summary: outputs/s4_r3_h16_veto_gate_confirmation_v1/summary.json
+  summary_sha256: fdba00e667a01d1b431b28b83d25e161c18cbabafcf7d08ba846a00c053a42c7
+  required_status: VETO_GATE_INDEPENDENT_CONFIRMATION_FAIL
+  reuse_old_actor: false
+  reuse_old_critic: false
+observation:
+  history_frames: 8
+  residual_modes: 21
+  allowed: [measured_residual, issued_commands, previous_corrections, arrived_power_measurement, timestamps, validity_mask, causal_actuator_estimate]
+  forbidden: [true_applied_modal, true_turbulence, true_registration, future_randomness, oracle_strehl, hidden_profile_id]
+  target_alignment: [residual_observation_next, measured_power_current_action]
+  old_student_requires_requalification: true
+action:
+  total_modes: 21
+  anchor_modes: 10
+  policy_modes: 11
+  normalized_limit: 1.0
+  correction_component_limit_rad: 0.0125
+  residual_component_limit_rad: 0.05
+  final_step_limit_rad: 0.15
+  total_l2_anchor_modes: 10
+  modal_limit_source: inherit_environment
+  projection_shared_with_baselines: true
+dynamics:
+  baseline: ridge_arx
+  nonlinear: frozen_arx_plus_gru_residual
+  gru_hidden_size: 64
+  ensemble_members: 3
+  supervised_horizons: [1, 2, 4, 8]
+  target_modes: 21
+  power_outputs: 1
+  normalization_source: training_only
+  initial_updates_per_member: 10000
+  subsequent_updates_per_member_per_round: 2000
+  batch_sequences: 64
+policy:
+  algorithm: short_horizon_differentiable_model_based_policy_optimization
+  hidden_sizes: [128, 128]
+  output_initialization: zero
+  planning_horizon: 8
+  discount: 0.99
+  action_cost_weight: 0.01
+  ensemble_return_std_penalty: 1.0
+  terminal_value_bootstrap: false
+  learned_q_network: false
+  model_frozen_during_policy_update: true
+  stop_action_gradient_through_model: false
+  training_initializations: 3
+  updates_per_round: 5000
+  total_rounds: 3
+  development_check_interval: 500
+mpc:
+  optimizer: cross_entropy_method
+  horizon: 8
+  population: 128
+  iterations: 4
+  elites: 16
+  include_zero_candidate: true
+  share_model_data_cost_projection: true
+baseline_selection:
+  candidates: [deployable_integrator, causal_estimate_tracking_integrator, ridge_predictor]
+  selection_split: development_selection
+  exclude_shared_model_mpc: true
+  freeze_before_policy_training: true
+data:
+  seed_namespace: null
+  seed_assignment_requires_history_scan: true
+  forbid_a10_block: 378
+  forbid_seed_at_or_above: 4000000
+  initial_training_weather_episodes: 384
+  selection_weather_episodes: 96
+  confirmation_id_weather_episodes: 96
+  confirmation_shift_weather_episodes: 96
+  weather_families: 3
+  hardware_profiles: 6
+  steps_per_episode: 200
+  initial_collectors: [anchor, bounded_excitation]
+  initial_training_transitions: 921600
+  additional_rounds: 2
+  additional_weather_episodes_per_round: 96
+  additional_collectors: [current_policy, shared_model_mpc]
+  additional_transitions_per_policy_initialization: 460800
+  additional_transitions_all_initializations: 1382400
+  confirmation_generated_after_freeze: true
+  model_rollouts_counted_separately: true
+gates:
+  r4_0: causal_contract_and_impulse_response
+  r4_1:
+    prediction_error_reduction_vs_persistence: 0.05
+    nonlinear_error_reduction_vs_linear: 0.05
+    fallback_if_nonlinear_fails: linear_model_mpc_feasibility
+    action_direction_balanced_accuracy: 0.60
+    action_direction_ci95_lower_min_exclusive: 0.50
+    min_identifiable_development_weather_episodes: 50
+    identifiable_signal_noise_multiplier: 3.0
+    mpc_power_relative_gain_min: 0.01
+  r4_2:
+    minimum_supporting_policy_initializations: 2
+    power_relative_gain_vs_strongest_baseline_min: 0.01
+    power_gain_vs_shared_model_mpc_positive: true
+  r4_3:
+    primary_metric: full_episode_mean_power_in_bucket
+    primary_comparators: [strongest_deployable_baseline, shared_model_mpc]
+    comparisons_per_split: 6
+    bootstrap_unit: weather_episode
+    bootstrap_replicates: 20000
+    stratification: turbulence_family
+    familywise_alpha: 0.05
+    minimum_supporting_policy_initializations: 2
+    power_relative_gain_vs_baseline_min: 0.01
+    strehl_ci95_lower_noninferiority_margin: -0.005
+    violation_rate_ci95_upper_increase_max: 0.001
+    each_turbulence_power_point_estimate_nonnegative: true
+    all_failures_retained: true
+boundary:
+  device: cuda
+  formal_owner: user_ide
+  automatic_retry: false
+  old_outputs_preserved: true
+  real_slm_actions: false
+  s4d3_access: false
+  current_new_algorithm_trained: false

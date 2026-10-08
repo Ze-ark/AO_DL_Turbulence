@@ -1,0 +1,28 @@
+stage: S4-D2-R5-D2
+purpose: development_only_frozen_policy_action_scale_response
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+parent: configs/experiments/s4_r5_policy_training_v1.yaml
+parent_sha256: 3f8f2cd5a8ffacd08e91f1606889f97a94b175b574180a725a0f706d2e08498e
+training_output: outputs/s4_r5_policy_training_v4
+training_summary_sha256: 2bcd9a87290cd7d37eeaafcee5c7f2b08f5a42ec58fe88d4e5e0fc99ac8efa5d
+checkpoints:
+  policy_0_02000.pt: 236f4ee3b83885181555b064e37391cb9fc8b93c260bcd076effa753620c78d0
+  policy_1_02000.pt: 653600beb3829ec62ac901d2447322fc4dafaf25e32dafde8f51fe65e9a3929c
+  policy_2_02000.pt: 2b4589eb6fdc93f6dd042f65b632b982f96bfb3042db98280d97ab8a9249ca49
+old_source_bundle_sha256: ccdc31faaa155361d8bd3e19ffc5bb82705f425a0ef4c7f58dd7f70831efd956
+scales: [1.25, 1.5, 1.75, 2.0]
+data: {seed_base: 6200000, seed_stride: 10, weather_count: 32, episode_length: 200}
+quick: {seed_base: 6210000, weather_count: 1, episode_length: 16, profile_ids: [nominal, combined_moderate]}
+selection:
+  rule: highest_three_member_mean_paired_power_gain
+  tie_break: smaller_scale
+  require_each_member_positive: true
+  require_each_family_positive: true
+  require_each_profile_positive: true
+  require_strehl_non_decrease: true
+  require_phase_rmse_non_increase: true
+  maximum_safety_increase: 0.001
+  minimum_development_relative_gain_for_new_confirmation_design: 0.0105
+output_directory: outputs/s4_r5_margin_development_d2_v1
+quick_directory: outputs/s4_r5_margin_development_d2_v1_quick_r1
+boundary: {confirmation_access: false, training_updates: 0, real_slm_actions: false, automatic_retry: false}

@@ -1,0 +1,21 @@
+stage: S4-D2-R5-G2-D6
+purpose: frozen_full_horizon_training_objective_radial_development_diagnostic
+runtime: {device: cuda, diagnostic_owner: assistant_under_user_goal, automatic_retry: false}
+g2_d5_config: configs/experiments/s4_r5_g2_d5_gradient_v1.yaml
+g2_d5_config_sha256: 47462a70a4cda9cd94c710a313d399ab080531be9d87bcd5c4d22d77e2f62269
+g2_d5_entry_sha256: 41b1e72dc55a7914b9b36f9c381536dee27fc5ec84ddc1aee1f7402dbaf325f5
+g2_d5_output: outputs/s4_r5_g2_d5_gradient_v1
+g2_d5_output_hashes:
+  summary.json: 94b7de9e7efbfc4fd23d2a8a6c707d59dff82652b099d7baed4a63a5d64d7e12
+  records.jsonl: cabe12682e31263c1e03ce2aed05cc4962aa2f8e6e5827fde57040702e1ff315
+  progress.jsonl: d363f57190a93200abecfe8653340e109731c74e6d24638f5b93439766390c53
+  stream_manifest.json: 1663d1cf346cefd23c4192d009f3b6cd1bbb61812548163e7ecf1be9a5342539
+  SUCCESS.json: e6967e63aa264b89dfe9275e3df8182b52ec4ec844644f76166687dd5d6b7aa3
+controllers: [train_scale_1, train_scale_1_75]
+hardware_conditions: [nominal_clone, hardware_shift]
+deployment_scale: 1.75
+data: {seed_base: 7340000, seed_stride: 10, weather_count: 2, episode_length: 200, initializations: 3}
+quick: {seed_base: 7350000, weather_count: 1, episode_length: 16, initializations: 1}
+output_directory: outputs/s4_r5_g2_d6_full_objective_v1
+quick_directory: outputs/s4_r5_g2_d6_full_objective_v1_quick_r1
+boundary: {confirmation_access: false, training_updates: 0, optimizer_updates: 0, real_slm_actions: false, automatic_retry: false, historical_results_read_only: true, independent_confirmation: false}

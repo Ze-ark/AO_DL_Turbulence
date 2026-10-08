@@ -5,8 +5,8 @@
 - Origin Skill: `academic-research-suite / experiment-agent`
 - Origin Mode: `build / run-preparation`
 - Origin Date: `2026-08-04`
-- Verification Status: `S4_D1_ANALYZED_PASS_S4_D2_IN_PREPARATION`
-- Version Label: `s4d_software_first_v3`
+- Verification Status: `S4_D2_R3_DESIGN_LOCKED_IMPLEMENTATION_PENDING`
+- Version Label: `s4d_software_first_v5`
 
 ## 小白版说明
 
@@ -87,23 +87,38 @@ S4-D0正式开发比较已经运行并封存，不得再次执行。S4-D1先做�
 
 ## RL何时开始
 
-S4-D1正式结果已经通过只读审计，现在实现残差SAC：
+S4-D1正式结果已经通过只读审计。旧S4-D2、R1和R2残差SAC先后失败，后续诊断
+证明新增11维理想动作存在、4帧观测含可学习信号，但旧策略存在严重学生状态分布
+漂移。单轮学生状态聚合监督实验现已PASS并封存，新的残差SAC设计也已锁定：
 
 ```text
 最终动作 = 冻结的鲁棒传统控制器动作 + RL小幅修正动作
 ```
 
-此前失败的GRU和S3-B结果继续保留。残差SAC是新的模型自由探索路线，不能写成GRU或PO4AO门槛已经通过。RL必须与S4-D1冻结的最强传统控制器共享观测、硬件误差、动作限制、训练预算和测试轨迹。
+此前失败的GRU、S3-B和旧残差SAC结果继续保留。新的RL不能写成GRU或PO4AO
+门槛已经通过。除了S4-D1冻结的最强传统控制器，RL还必须与本次冻结的学生状态
+聚合监督策略共享观测、硬件误差、动作限制和测试轨迹。RL相对监督策略的增量收益
+才是新的主要研究量。
 
-S4-D2只使用全新训练和开发验证种子。策略读取最近4帧残余模态和实际动作、当前请求以及冻结控制器动作，不读取仿真真值质量指标。RL残差限制为每模态±0.05 rad，合并后的最终动作仍受原±0.15 rad单步范围约束。正式训练由用户在IDE启动，详见 [S4-D2残差SAC训练计划](S4-D2残差SAC训练计划.md)。
+S4-D2-R3设计已经锁定：冻结学生监督策略以50%动作作为强锚点，SAC只学习新增
+11维、每坐标不超过`0.0125 rad`的小修正。主要组复制监督模型的状态标准化和前
+两层特征，随机主干组做同预算消融。两组各3个策略种子，每种子499200条转移。
+上述为历史设计；R3随后已正式训练且未过门槛，不能重复启动。后续机制诊断和A3—A7监督探针也没有
+授权完整RL重训。A7扩样有局部帮助但未稳定过关；当前准备A8分类/收益分工输出对照，详见
+[A8计划](S4-D2-R3-D2-A8分类与收益分离输出对照计划.md)。
 
 ## 当前状态
 
 ```text
 S4-C0：COMPLETED / ANALYZED / FAIL
 S4-D0：COMPLETED / ANALYZED / PASS
-S4-D1：COMPLETED / ANALYZED / PASS / SEALED FROM RL
-Residual SAC：S4-D2 RUN PREPARATION
+S4-D1：COMPLETED / ANALYZED / PASS
+旧Residual SAC：S4-D2 / R1 / R2 COMPLETED / FAIL
+单轮学生状态聚合监督：COMPLETED / ANALYZED / PASS
+学生锚定Residual SAC：S4-D2-R3 COMPLETED / FAIL
+A7扩样监督探针：COMPLETED / ANALYZED / GATES NOT MET
+A8分工输出监督探针：READY FOR USER TRAINING / FORMAL TRAINING NOT STARTED
+S4-D3：CLOSED
 H1 / S4-C1：DEFERRED UNTIL SLM AVAILABLE
 真实SLM动作：NOT AUTHORIZED
 ```

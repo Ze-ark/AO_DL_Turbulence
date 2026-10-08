@@ -1,0 +1,36 @@
+stage: S4-D2-R5-G2-D9
+purpose: fresh_weather_action_penalty_single_factor_closed_loop_development
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+d8_config: configs/experiments/s4_r5_g2_d8_action_penalty_zero_v1.yaml
+d8_config_sha256: 34a592e3895e144f6b5f369330c183399a2aadb2251eaf3ef0ed38f54150e9ac
+d8_entry_sha256: 6d91c8b7669c4f3aeaa9624297cbffca197c430587285b6f752f9866d1ab0e57
+d8_output: outputs/s4_r5_g2_d8_action_penalty_zero_v1
+d8_output_hashes:
+  summary.json: 95dc607e06fd00493f450a122df7314004e11cbf681ccb3d5a51ca31ad178961
+  losses.jsonl: 48cf5c0db9d41f92df5b254d0891e4cfda1ea176e3dd5b60c79538d04e7e7027
+  progress.jsonl: ee20f5eec693adfa44a3342103200c15de96664e67b5e0a5779f58920be2b193
+  stream_manifest.json: 6312e5ec18ba93685dd4383c3ddc3689f4297ea60c28bb3a819a97adac026f58
+  checkpoint_manifest.json: 3e5b738b7b18c4a38fc1150c65fb84a96a37451d464e97111b7a0d352bb2d9b7
+  SUCCESS.json: 11f92fd8f1a1247a2c8529e8e7a4536a313b96bfb42d4053142f1b3e195aa94c
+  runtime.json: 1ac4ba074a15184a46793fd2be80dde6eea1d8ea00653ab1a5542edfa2597867
+  config.json: 9d69da3509ffec2e305a3c962ea5e35077a7d4ab5cd88d2b55c3b05c715a1e88
+  preflight.json: 409ebce9aca1631688851c53dbea3a7affd4d20112ffc6bace523b787ad8649e
+d8_final_checkpoints:
+  action_penalty_0_policy_0_00512.pt: af2453ef2b5c20f231d7286f0d6c597b258f944e9a295c2e1470d8a4b79b2523
+  action_penalty_0_policy_1_00512.pt: 71ab8b375b4b942a37e567906891ec1fbf4e2dd335c9677233d4dac4bea4a471
+  action_penalty_0_policy_2_00512.pt: 4eac6814f28d7ef49a4ebe933342bb86e77c46a64d80cd7eaf8f5a5434e3ee94
+evaluation_helpers_sha256:
+  scripts/diagnose_s4_r5_g2_d3_matched_development.py: 91c40144b47845118876052e7e68009ae402c218544e76c6b6cf195edf5322ca
+  scripts/diagnose_s4_r5_margin_d2.py: 5205e3cc6772a11b0d2df33d807ca08efa70bdab7eb2aaa1cac4acfb8051719d
+source_bundle_sha256: ccdc31faaa155361d8bd3e19ffc5bb82705f425a0ef4c7f58dd7f70831efd956
+controller_ids: [integrator, train_scale_1_75_0, train_scale_1_75_1, train_scale_1_75_2, action_penalty_0_0, action_penalty_0_1, action_penalty_0_2]
+deployment_scale: 1.75
+hardware_conditions: [nominal_clone, hardware_shift]
+data: {seed_base: 7500000, seed_stride: 10, weather_count: 32, episode_length: 200}
+quick: {seed_base: 7520000, weather_count: 1, episode_length: 16}
+reserved_confirmation_seed_base: 7600000
+statistics: {bootstrap_seed: 7533456, bootstrap_repeats: 5000, primary_interval_per_condition: 0.975}
+thresholds: {minimum_relative_gain: 0.0105, maximum_safety_increase: 0.001}
+output_directory: outputs/s4_r5_g2_d9_action_penalty_development_v1
+quick_directory: outputs/s4_r5_g2_d9_action_penalty_development_v1_quick
+boundary: {confirmation_access: false, training_updates: 0, real_slm_actions: false, automatic_retry: false, historical_results_read_only: true}

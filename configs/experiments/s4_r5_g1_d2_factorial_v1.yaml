@@ -1,0 +1,23 @@
+stage: S4-D2-R5-G1-D2
+purpose: development_only_paired_wind_hardware_factorial
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+g1_d1_config: configs/experiments/s4_r5_g1_hardware_mechanism_v1.yaml
+g1_d1_config_sha256: 37d0591555dae5e0cb9da64c976edff3d14fa617440f6251fefa566432739162
+g1_d1_entry_sha256: 8f38330709366fa331648f0ace1da15509c4b6d7a39458f9429ded92b3b0fad9
+g1_d1_output: outputs/s4_r5_g1_hardware_mechanism_v1
+g1_d1_output_hashes:
+  summary.json: 2d098007e85fcc9119fd27e3c1a5addc270487de472765579f23fe16aceed7ad
+  records.jsonl: 4746a2d4c5d8f247c53f03a69ceb53b2b0931d4378d4d33dc7d9fe1b3171e5dd
+  progress.jsonl: 83c179155e2b1bcd1e28f83a27d5fa0be88683a968cd0506f63e415adf08dc44
+  stream_manifest.json: 8d78f96a873a5eb7b53fbd2596f277756ac6dfd0223f8854cabed25e4a0a1527
+  SUCCESS.json: 0d35eae882316583775c4cd984c6b0dc92c0db4185b483dc44687b19176ea82f
+selected_scale: 1.75
+wind_speed_multiplier: 1.10
+original_profiles: [nominal, delay_3, settling_050, registration_moderate, registration_severe, combined_moderate]
+shift_profiles: [delay_1, quantization_64, lut_scale_085, observation_noise_010, power_noise_003, combined_severe]
+data: {seed_base: 6700000, seed_stride: 10, weather_count: 24, episode_length: 200}
+quick: {seed_base: 6710000, weather_count: 1, episode_length: 16}
+statistics: {bootstrap_seed: 6723456, bootstrap_repeats: 5000}
+output_directory: outputs/s4_r5_g1_d2_factorial_v1
+quick_directory: outputs/s4_r5_g1_d2_factorial_v1_quick_r1
+boundary: {confirmation_access: false, training_updates: 0, real_slm_actions: false, automatic_retry: false, historical_results_read_only: true}

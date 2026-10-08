@@ -1,0 +1,79 @@
+metadata:
+  stage: S4-D2-R3-D2-A5
+  experiment_id: AO-S4-D2-R3-D2-A5-PHYSICAL-TARGET-STABILITY
+  version_label: s4d2_r3_d2a5_physical_target_stability_v1
+  purpose: select_the_shortest_stable_non_bootstrapped_physical_target_horizon
+  diagnostic_only: true
+  allow_gradient_updates: false
+  allow_model_training: false
+  allow_new_episode_generation: false
+  allow_mechanism_audit_access: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+design_contract:
+  audit_record: docs/S4-D2-R3-D2-A4状态可观测性与标签一致性诊断审计记录.md
+  audit_record_sha256: aea6c641157844ae57e09d91dd8efd9df1a959a7f0ce54297a15964a4500af4d
+  plan: docs/S4-D2-R3-D2-A5纯物理目标稳定性扫描计划.md
+  plan_sha256: 6753f8535bf411dcb715d8ada3def61a2fed77effe29adb82b99905f3313ad17
+
+upstream_a4:
+  summary: outputs/s4_r3_observability_label_consistency_v1/summary.json
+  summary_sha256: 8e9c1b4455f6b245cbf9e6904efbfa2cd0bda49b4ffe6f1eb26715114ddf8876
+  preflight: outputs/s4_r3_observability_label_consistency_v1/preflight.json
+  preflight_sha256: 573a6b5e3b7536f88438f433313742f5f18d558f40081c8707dae7993bc824e7
+  effective_config: outputs/s4_r3_observability_label_consistency_v1/effective_config.json
+  effective_config_sha256: 769ec7b7b61c5d5b64febd15715cd755da34cdf970b625c9d0668b0b474d3920
+  source_manifest: outputs/s4_r3_observability_label_consistency_v1/source_manifest.json
+  source_manifest_sha256: def87154c5e3ad756012378bc06ded9711c10f20d12d73cdb7ae7eaa7e3f59e1
+  view_metrics: outputs/s4_r3_observability_label_consistency_v1/view_metrics.csv
+  view_metrics_sha256: 7a7750c1af8f1bf2818962b1fc7e963b82679aa1a9e87a53f79baa8e51391d83
+  neighborhood_metrics: outputs/s4_r3_observability_label_consistency_v1/neighborhood_metrics.csv
+  neighborhood_metrics_sha256: a1d0519407e6c8460d9c0c3da079ff9427c2bc356bb98211f2fee08fee61df9e
+  label_consistency: outputs/s4_r3_observability_label_consistency_v1/label_consistency.csv
+  label_consistency_sha256: b2aeabd06d2013725aa1c6ca43fcbc9c15cf152dcaa52c40e2f7c039348188ab
+  required_status: HORIZON_OR_BOOTSTRAP_LABEL_INSTABILITY
+
+data:
+  policy_seeds: [9301, 9302, 9303]
+  maximum_horizon: 32
+  state_size: 210
+  action_size: 11
+  expected_development_pairs_per_seed: 1728
+  expected_validation_pairs_per_seed: 864
+  development:
+    9301: {path: outputs/s4_r3_multistep_critic_repair_v1/datasets/seed_9301_development.pt, sha256: dfc7439c8aee8b575bb89f79ed13964c7428632f17610a616742bf0c841ae41f}
+    9302: {path: outputs/s4_r3_multistep_critic_repair_v1/datasets/seed_9302_development.pt, sha256: 529f4932d437babe96bfdabe0f04abea335a5c86bf6da957a43aeb0c7d7fa573}
+    9303: {path: outputs/s4_r3_multistep_critic_repair_v1/datasets/seed_9303_development.pt, sha256: d77d44591c1c6d100e2b4e4634960a4f1d00602600ffcdca92a51f6724776378}
+  validation:
+    9301: {path: outputs/s4_r3_multistep_critic_repair_v1/datasets/seed_9301_validation.pt, sha256: a87ae10f87875cb971749a3f86e9fcec68f118bad59624389208ab8682fd6817}
+    9302: {path: outputs/s4_r3_multistep_critic_repair_v1/datasets/seed_9302_validation.pt, sha256: a77509dc33d4a678b00e66e22ee76a2ef192f34b0e2080ed9b253f8b2a01882a}
+    9303: {path: outputs/s4_r3_multistep_critic_repair_v1/datasets/seed_9303_validation.pt, sha256: 973f455f3026c8d64a2401bdd45a04aafc979b9917d65d241ab555ee3bb7335c}
+
+scan:
+  candidate_horizons: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
+  local_offsets: [1, 2, 4]
+  terminal_horizon: 32
+  strata: [all, high_magnitude]
+  high_magnitude_quantile: 0.50
+
+diagnostic_thresholds:
+  minimum_sign_agreement: 0.80
+  minimum_balanced_accuracy: 0.65
+  minimum_actor_better_fraction: 0.15
+  maximum_actor_better_fraction: 0.85
+
+runtime:
+  device: cuda
+  require_cuda: true
+  deterministic_algorithms: true
+
+outputs:
+  directory: outputs/s4_r3_physical_target_stability_v1
+  quick_directory: outputs/s4_r3_physical_target_stability_v1_quick_v2
+
+quick:
+  policy_seeds: [9301]
+  maximum_development_pairs: 128
+  maximum_validation_pairs: 64
+  candidate_horizons: [8, 16, 24, 32]

@@ -1,0 +1,41 @@
+# O2-D1：仅静态合成读出噪声诊断，不训练、不控制、不接真实相机。
+schema: observation_bridge_o2_d1_read_noise_v1
+scope: synthetic_static_read_noise_diagnostic_not_closed_loop
+device: cuda
+optics_config: configs/experiments/observation_bridge_o2_optics_v1.yaml
+fixture_seed: 832001
+fixture_count: 55
+noise_distribution: additive_gaussian_then_clip_negative_intensity_to_zero
+noise_units: arbitrary_synthetic_intensity
+shared_draw_across_levels: true
+measurement_batch_size: 1
+data:
+  fixture_indices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54]
+  repetitions: 16
+  noise_stds: [0.0, 0.001, 0.01, 0.1, 0.3, 1.0, 3.0, 10.0]
+  extra_fixture_seed: 8500000
+  noise_seed_base: 8501000
+quick:
+  fixture_indices: [0, 1, 47]
+  repetitions: 1
+  noise_stds: [0.0, 0.001, 10.0]
+  extra_fixture_seed: 8510000
+  noise_seed_base: 8511000
+thresholds:
+  zero_noise_modal_error_max_rad: 0.001
+  extra_component_norm_min: 1.0e-8
+boundary:
+  dynamic_environment_steps: 0
+  model_loads: 0
+  model_forward_calls: 0
+  training_updates: 0
+  scientific_gain_analysis: false
+  independent_confirmation: false
+  old_confirmation_trajectory_access: false
+  real_data_access: false
+  real_slm_actions: false
+  historical_gate_reclassification: false
+  truth_fallback: false
+  automatic_retry: false
+output_directory: outputs/observation_bridge_o2_d1_read_noise_v1
+quick_directory: outputs/observation_bridge_o2_d1_read_noise_v1_quick

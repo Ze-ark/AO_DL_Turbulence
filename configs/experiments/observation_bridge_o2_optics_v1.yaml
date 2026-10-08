@@ -1,0 +1,35 @@
+# O2-A：47 份已知答案的 CUDA 光学技术检查，无动态回合、模型或训练。
+schema: observation_bridge_o2_optics_v1
+scope: cuda_synthetic_optics_technical_only
+device: cuda
+fixture_seed: 832001
+positive_fixture_count: 47
+maximum_gpu_fixture_batch: 4
+output_directory: outputs/observation_bridge_o2_optics_v1
+design_path: configs/experiments/observation_bridge_o2_design_v1.json
+design_sha256: 08da140eb29d86ada740c33e4f2edfc1719a2aeba6e58c15964bfbc6608625e9
+sealed_source_bundle_sha256: ccdc31faaa155361d8bd3e19ffc5bb82705f425a0ef4c7f58dd7f70831efd956
+thresholds:
+  relative_complex_field_l2_error_maximum: 1.0e-5
+  modal_coefficient_max_error_rad: 1.0e-4
+optics:
+  measurement_plane: ideal_conjugate_image_of_frozen_simulation_pupil
+  pupil_grid_size: 64
+  camera_grid_size: 512
+  reference_amplitude: 1.0
+  reference_constant_phase_rad: 0.0
+  reference_carrier_bins_yx: [128, 128]
+  crop_rows: [96, 160]
+  crop_columns: [96, 160]
+  orientation: {transpose: false, flip_y: false, flip_x: false, phase_sign: 1}
+contract:
+  source_kind: synthetic_known_pupil
+  measurement_plane: frozen_simulation_pupil
+  phase_unit: rad
+  reference: joint_constant_and_frozen_modes
+  spatial_sampling_verified: true
+  orientation: {transpose: false, flip_y: false, flip_x: false, phase_sign: 1}
+modal_tolerances:
+  min_relative_intensity: 1.0e-4
+  max_neighbor_jump_rad: 1.5
+  loop_consistency_rad: 1.0e-4

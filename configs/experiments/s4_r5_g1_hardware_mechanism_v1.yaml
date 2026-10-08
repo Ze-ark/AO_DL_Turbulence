@@ -1,0 +1,27 @@
+stage: S4-D2-R5-G1-D1
+purpose: development_only_paired_hardware_shift_mechanism
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+g1_config: configs/experiments/s4_r5_g1_cross_condition_v1.yaml
+g1_config_sha256: 7158f2f7a62c42da9ef763a310208f1a300cda219a1ba56177e65e9e6ff26cde
+g1_entry_sha256: 001c456b6e9e705b0e964fd68c1fef08c3170d105d57b1e6b89eeaf28fa91ad7
+g1_output_hashes:
+  wind:
+    summary.json: fe2c7b7e0e3cc4b0e9ba0b2fc2b98ca9bd2f563446e1582fa56b6ab1799da7c5
+    records.jsonl: 0f44120f854379bf5ffb10ce709af8142709cef035140c319b4e1458c845b136
+    progress.jsonl: 19e0cfc0ff2bb4ccb6df41af051d7249dd656952085ca9db10e4b390c881f662
+    stream_manifest.json: 9a4acafcec2fbcc1394693ce152bba60e7a88985a26b91c9ab507d03d1164504
+    SUCCESS.json: f146eb97bbd0d755ac6f94fb7dec85ff664da28374f43802a5872254b6f96c6c
+  hardware:
+    summary.json: 708a08921f716d9669a9c6e54f45f809f967319a02ee11478d997b639f12a27f
+    records.jsonl: 2bc53d1703136091d7291b8deb8e2a29042dfd714e0ce256c72ec893876eb876
+    progress.jsonl: 6a2ca134d311186c457315e6e463c4376fde3c2e89154832c8c1c2d424965576
+    stream_manifest.json: 279bf791408d9c193208d1a391b8d071c6889f6c31c5f8ba4c6287c1ea7fe015
+    SUCCESS.json: d3e231396159d93eaef3cc43d709116e7a618e3e496714271f45b9de04a3dd4c
+selected_scale: 1.75
+hardware_shift_profiles: [delay_1, quantization_64, lut_scale_085, observation_noise_010, power_noise_003, combined_severe]
+data: {seed_base: 6600000, seed_stride: 10, weather_count: 24, episode_length: 200}
+quick: {seed_base: 6610000, weather_count: 1, episode_length: 16}
+statistics: {bootstrap_seed: 6623456, bootstrap_repeats: 5000}
+output_directory: outputs/s4_r5_g1_hardware_mechanism_v1
+quick_directory: outputs/s4_r5_g1_hardware_mechanism_v1_quick
+boundary: {confirmation_access: false, training_updates: 0, real_slm_actions: false, automatic_retry: false, g1_results_read_only: true}

@@ -1,0 +1,28 @@
+# A9运行入口读取固定设计；正式训练仅由用户在IDE启动。
+stage: S4-D2-R3-D2-A9
+runnable: true
+design: configs/experiments/s4_r3_h16_fixed_time_confirmation_design_v1.yaml
+design_sha256: d3a7003c2b98b7eab30b37ceca3780b0ddd31f1b6915994b6aef32603027e1b3
+runtime: {device: cuda, require_cuda: true, deterministic_algorithms: true}
+boundary:
+  actor_updates: 0
+  original_critic_updates: 0
+  alpha_updates: 0
+  student_updates: 0
+  full_rl_trained: false
+  s4d3_accessed: false
+  real_slm_actions: false
+frozen_inputs:
+  docs/S4-D2-R3-D2-A9固定时点与单任务对照实验设计.md: f178dfd0fdc2666b706ecd7c19e51afa91bb15d8bd88b6323aa8f22ac7e10e78
+  docs/S4-D2-R3-D2-A8-D3最佳与末次模型对照诊断审计记录.md: e7d3f63d687f97a6934d60f4316030455cfa98ba5cf714d6be7725724349b1aa
+  outputs/s4_r3_physical_target_confirmation_v1/source_manifest.json: c0d9d29c9eadf73cf45718b565c28f9761cac4df559c5aa4307d3635e5bcf6aa
+  outputs/s4_r3_h16_checkpoint_endpoints_v1/source_manifest.json: c669081c82eaf8336e96988bf062075956f886f26d1bc8005b4b6831e2cc3e66
+  configs/experiments/s4_r3_multistep_critic_repair_v1.yaml: a8c0c271d3e21b98e3e141b5c78df20ba9e0abe85cf111690667c982d5af21e9
+tracked_source_files:
+  - configs/experiments/s4_r3_h16_fixed_time_confirmation_v1.yaml
+  - scripts/train_s4_r3_h16_fixed_time_confirmation.py
+  - src/rl/s4_r3_h16_fixed_time_contract.py
+  - src/rl/s4_r3_h16_fixed_time_training.py
+  - src/rl/s4_r3_h16_fixed_time_analysis.py
+  - src/rl/s4_r3_h16_fixed_time_confirmation.py
+  - tests/test_s4_r3_h16_fixed_time_confirmation.py

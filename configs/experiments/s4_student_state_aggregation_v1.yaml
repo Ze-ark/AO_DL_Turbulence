@@ -1,0 +1,387 @@
+metadata:
+  stage: S4-D2-R2-STUDENT-STATE-AGGREGATION-R1
+  purpose: test_one_bounded_student_state_aggregation_round_with_a_matched_data_budget_control
+  hypothesis: covering_nonzero_added_request_states_reduces_immediate_closed_loop_ood_without_changing_architecture_or_action_budget
+  allow_supervised_training: true
+  allow_rl_training: false
+  allow_more_than_one_aggregation_round: false
+  allow_reward_change: false
+  allow_model_architecture_change: false
+  allow_future_truth_in_teacher_labels: true
+  allow_future_truth_in_model_inputs: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+upstream_baseline:
+  summary: outputs/s4_baseline_state_imitation_v1/summary.json
+  summary_sha256: 34b328da6f79054973f03379d4e939c42b78d1d99839e0f77524634e440b1e72
+  preflight: outputs/s4_baseline_state_imitation_v1/preflight.json
+  preflight_sha256: 37cc7229fc559167a8d61a11f8a0fa483f6b5765569e5fbdc69f5f63e8c06ccf
+  effective_config: outputs/s4_baseline_state_imitation_v1/effective_config.json
+  effective_config_sha256: b1f98f1d38f787ef29fedecdad67b50c4b039ee9cb95b54e798228ff5fa4b45c
+  source_manifest: outputs/s4_baseline_state_imitation_v1/source_manifest.json
+  source_manifest_sha256: 495fa255704fb8e38657d123590ab30825abbba5cb49b0ce1ba8eda7a452f854
+  dataset: outputs/s4_baseline_state_imitation_v1/baseline_state_dataset.pt
+  dataset_sha256: b5616e5b9f6a8a6bb7a3796e446c9b374818d733c1ced257852a9a2b25dca287
+  control_episode_records: outputs/s4_baseline_state_imitation_v1/control_episode_records.csv
+  control_episode_records_sha256: b379ff8c06383c0349e27bb599293ac2b2bd4a3d366d8f984fab05e63d971ba3
+  scenario_records: outputs/s4_baseline_state_imitation_v1/scenario_records.csv
+  scenario_records_sha256: 42c86ee7c5bf985aa22c83bcc5256bb63c9481d929154e130530d993d27a9e6d
+  episode_records: outputs/s4_baseline_state_imitation_v1/episode_records.csv
+  episode_records_sha256: a2b406d48f41a689888d5baba8e62c947bceaa780a70c4543699191ae82acdf2
+  temporal_records: outputs/s4_baseline_state_imitation_v1/temporal_records.csv
+  temporal_records_sha256: ca51eafe338097069dd8403869e9f6b4bd3e01a5b42315a2f12f76fe2aa7f9a6
+  temporal_episode_records: outputs/s4_baseline_state_imitation_v1/temporal_episode_records.csv
+  temporal_episode_records_sha256: 3a24782653a6f59144995124ede01ce9a5436b2417576c4979dd19ad0f8a0727
+  experiment_config: configs/experiments/s4_baseline_state_imitation_v1.yaml
+  experiment_config_sha256: 0188f4e1991f33ad2bdc3abf5319e39c44513c24e3d18fe0dc64f81418786c4a
+  audit_record: docs/S4-D2-R2基线状态监督实验审计记录.md
+  audit_record_sha256: 61ead5bf3f4965e3a42adb4d1daaf597530437dc79deb68940e102bc87292467
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+environment_config_sha256: 8172a07efb2607544011a9fc959f4ab4fbed9a471de9c0112dd15f1d45e5976a
+hardware_profile_source: configs/experiments/s4_hardware_stress_v1.yaml
+hardware_profile_source_sha256: fb6cb5a3e86fa0445345e47b084722a5c1613d07eab73f596c32afb6c4ce07e8
+
+representation:
+  id: zernike_21_added_11
+  kind: zernike
+  num_modes: 21
+  anchor_modes: 10
+  output_modes: 11
+  pseudoinverse_rcond: 0.00001
+
+frozen_controller:
+  id: tracking_conservative
+  active_anchor_modes: 10
+  kind: tracking_leaky_integrator
+  parameters:
+    gain: 0.25
+    leak: 0.10
+    tracking_gain: 0.50
+    max_request_step_rad: 0.15
+
+action_budget:
+  residual_component_limit_rad: 0.05
+  final_component_step_limit_rad: 0.15
+  preserve_total_phase_rms_budget: true
+  total_budget_anchor_modes: 10
+  preserve_environment_modal_limit: true
+
+teacher:
+  preview_horizon_frames: 2
+  uses_future_simulator_truth_for_labels: true
+  uses_exact_registration_for_labels: true
+  target: requested_added_residual_normalized_by_component_limit
+
+policy_observation:
+  history_frames: 4
+  state_size: 210
+  include_future_truth: false
+  include_oracle_quality_metrics: false
+  include_hardware_profile_identifier: false
+  fields:
+    - residual_modal_noisy_all_21_modes
+    - applied_modal_all_21_modes
+    - requested_modal_all_21_modes
+    - frozen_ten_mode_baseline_delta_zero_padded
+
+model:
+  kind: two_layer_mlp_matching_old_sac_actor_backbone
+  hidden_size: 256
+  output_activation: tanh
+  output_size: 11
+  ridge_alpha: 0.001
+
+aggregation:
+  rounds: 1
+  behavior_policy: frozen_baseline_state_mlp
+  behavior_predictor_ids:
+    - previous_baseline_mlp_seed_8201
+    - previous_baseline_mlp_seed_8202
+    - previous_baseline_mlp_seed_8203
+  behavior_scales: [0.005, 0.01, 0.02]
+  max_behavior_scale: 0.02
+  existing_safety_projection_required: true
+  matched_extra_baseline_samples_required: true
+
+training:
+  initialization_seeds: [8201, 8202, 8203]
+  batch_size: 1024
+  learning_rate: 0.0003
+  weight_decay: 0.000001
+  max_optimizer_steps: 6000
+  min_optimizer_steps: 1500
+  validation_interval_steps: 200
+  early_stopping_patience_checks: 10
+  early_stopping_relative_min_delta: 0.0005
+  gradient_clip_norm: 1.0
+  normalization_min_scale: 0.000001
+
+dataset:
+  steps_per_episode: 200
+  training_episodes_per_condition: 32
+  validation_episodes_per_condition: 16
+  diagnostic_test_episodes_per_condition: 16
+  profile_ids:
+    - nominal
+    - delay_3
+    - settling_050
+    - registration_moderate
+    - registration_severe
+    - combined_moderate
+  training_conditions:
+    - id: aggregate_train_frozen
+      regime: frozen_stationary
+      base_seed: 3495000
+      wind_speed_mps: 0.45
+      wind_direction_deg: 15.0
+      slm_delay_frames: 2
+    - id: aggregate_train_boiling
+      regime: boiling_stationary_wind
+      base_seed: 3495100
+      wind_speed_mps: 0.55
+      wind_direction_deg: 60.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+    - id: aggregate_train_combined
+      regime: boiling_varying_wind_noisy
+      base_seed: 3495200
+      wind_speed_mps: 0.60
+      wind_direction_deg: 75.0
+      frozen_flow_rho: 0.995
+      wind_speed_modulation_fraction: 0.15
+      wind_direction_modulation_deg: 15.0
+      wind_modulation_period_frames: 80
+      wind_modulation_phase_deg: 135.0
+      slm_delay_frames: 2
+  validation_conditions:
+    - id: aggregate_val_frozen
+      regime: frozen_stationary
+      base_seed: 3496000
+      wind_speed_mps: 0.50
+      wind_direction_deg: 25.0
+      slm_delay_frames: 2
+    - id: aggregate_val_boiling
+      regime: boiling_stationary_wind
+      base_seed: 3496100
+      wind_speed_mps: 0.60
+      wind_direction_deg: 50.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+    - id: aggregate_val_combined
+      regime: boiling_varying_wind_noisy
+      base_seed: 3496200
+      wind_speed_mps: 0.55
+      wind_direction_deg: 80.0
+      frozen_flow_rho: 0.995
+      wind_speed_modulation_fraction: 0.15
+      wind_direction_modulation_deg: 15.0
+      wind_modulation_period_frames: 80
+      wind_modulation_phase_deg: 225.0
+      slm_delay_frames: 2
+  diagnostic_test_conditions:
+    - id: aggregate_test_frozen
+      regime: frozen_stationary
+      base_seed: 3497000
+      wind_speed_mps: 0.525
+      wind_direction_deg: 30.0
+      slm_delay_frames: 2
+    - id: aggregate_test_boiling
+      regime: boiling_stationary_wind
+      base_seed: 3497100
+      wind_speed_mps: 0.625
+      wind_direction_deg: 45.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+    - id: aggregate_test_combined
+      regime: boiling_varying_wind_noisy
+      base_seed: 3497200
+      wind_speed_mps: 0.50
+      wind_direction_deg: 85.0
+      frozen_flow_rho: 0.995
+      wind_speed_modulation_fraction: 0.15
+      wind_direction_modulation_deg: 15.0
+      wind_modulation_period_frames: 80
+      wind_modulation_phase_deg: 270.0
+      slm_delay_frames: 2
+
+evaluation:
+  episodes_per_condition: 16
+  deployment_scales: [0.02, 0.10, 0.25, 0.50]
+  primary_scale: 0.50
+  time_bins:
+    - {id: warmup_000_019, start: 0, stop: 20}
+    - {id: early_020_049, start: 20, stop: 50}
+    - {id: middle_050_099, start: 50, stop: 100}
+    - {id: late_100_149, start: 100, stop: 150}
+    - {id: final_150_199, start: 150, stop: 200}
+  conditions:
+    - id: aggregate_eval_frozen
+      regime: frozen_stationary
+      base_seed: 3498000
+      wind_speed_mps: 0.525
+      wind_direction_deg: 30.0
+      slm_delay_frames: 2
+    - id: aggregate_eval_boiling
+      regime: boiling_stationary_wind
+      base_seed: 3498100
+      wind_speed_mps: 0.625
+      wind_direction_deg: 45.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+    - id: aggregate_eval_combined
+      regime: boiling_varying_wind_noisy
+      base_seed: 3498200
+      wind_speed_mps: 0.50
+      wind_direction_deg: 85.0
+      frozen_flow_rho: 0.995
+      wind_speed_modulation_fraction: 0.15
+      wind_direction_modulation_deg: 15.0
+      wind_modulation_period_frames: 80
+      wind_modulation_phase_deg: 270.0
+      slm_delay_frames: 2
+
+reference_predictors:
+  - id: baseline_ridge
+    kind: ridge
+    checkpoint: outputs/s4_baseline_state_imitation_v1/checkpoints/ridge.pt
+    checkpoint_sha256: 2ab4a86c9ee7e9ef6b938c700e5bbfeb55055cfa78886bdab955b4e68a0e7741
+  - id: previous_baseline_mlp_seed_8201
+    kind: mlp
+    initialization_seed: 8201
+    hidden_size: 256
+    checkpoint: outputs/s4_baseline_state_imitation_v1/checkpoints/mlp_seed_8201_best.pt
+    checkpoint_sha256: f62e85355abb9201d92885a13cd219a768572ec73f9bb97af955e0e7acde1217
+  - id: previous_baseline_mlp_seed_8202
+    kind: mlp
+    initialization_seed: 8202
+    hidden_size: 256
+    checkpoint: outputs/s4_baseline_state_imitation_v1/checkpoints/mlp_seed_8202_best.pt
+    checkpoint_sha256: 3c084a1554da998c5e48f1b62cbe9800567f97400a4e99728ac95db0162217dd
+  - id: previous_baseline_mlp_seed_8203
+    kind: mlp
+    initialization_seed: 8203
+    hidden_size: 256
+    checkpoint: outputs/s4_baseline_state_imitation_v1/checkpoints/mlp_seed_8203_best.pt
+    checkpoint_sha256: 4596ee23778b7ce7c69c3c2fc69626d5e58277098d96d0afbe56aa6c839d3709
+
+offline_gate:
+  min_skill_score_against_zero: 0.30
+  min_mean_cosine_similarity: 0.30
+  require_every_initialization: true
+
+closed_loop_gate:
+  proposed_min_relative_power_gain: 0.02
+  min_power_delta_ci95_low: 0.0
+  min_strehl_delta_ci95_low: 0.0
+  max_phase_rmse_delta_ci95_high: 0.0
+  max_violation_fraction: 0.05
+  require_all_profiles_pass: true
+  require_every_initialization: true
+
+aggregation_gate:
+  min_requested_added_std_rad: 0.0001
+  max_aggregate_to_control_mse_ratio: 0.75
+  min_primary_gain_improvement_over_control: 0.02
+
+interpretation_thresholds:
+  on_policy_mse_over_offline_reference_min: 2.00
+  on_policy_mse_ratio_late_over_early_min: 1.50
+  state_ood_fraction_increase_min: 0.02
+  cumulative_added_request_ratio_late_over_early_min: 1.25
+  reduced_scale_improvement_over_full_scale_min: 0.05
+  zero_alignment_max_abs_error: 0.000005
+  projection_comparison_tolerance_rad: 0.0000001
+
+protected_seed_ranges:
+  - id: all_prior_stages_and_baseline_state
+    start_inclusive: 0
+    end_exclusive: 3495000
+  - id: reserved_future_rl_and_s4d3
+    start_inclusive: 3500000
+    end_exclusive: 5000000
+
+quick:
+  upstream_episodes_per_split: 2
+  steps_per_episode: 20
+  training_episodes_per_condition: 2
+  validation_episodes_per_condition: 2
+  diagnostic_test_episodes_per_condition: 2
+  evaluation_episodes_per_condition: 2
+  profile_ids: [nominal]
+  training_conditions:
+    - id: aggregate_quick_train
+      regime: boiling_stationary_wind
+      base_seed: 3499300
+      wind_speed_mps: 0.50
+      wind_direction_deg: 45.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+  validation_conditions:
+    - id: aggregate_quick_val
+      regime: boiling_stationary_wind
+      base_seed: 3499400
+      wind_speed_mps: 0.55
+      wind_direction_deg: 50.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+  diagnostic_test_conditions:
+    - id: aggregate_quick_test
+      regime: boiling_stationary_wind
+      base_seed: 3499500
+      wind_speed_mps: 0.60
+      wind_direction_deg: 55.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+  evaluation_conditions:
+    - id: aggregate_quick_eval
+      regime: boiling_stationary_wind
+      base_seed: 3499600
+      wind_speed_mps: 0.575
+      wind_direction_deg: 52.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+  behavior_scales: [0.01]
+  behavior_predictor_ids: [previous_baseline_mlp_seed_8201]
+  reference_predictor_ids: [baseline_ridge, previous_baseline_mlp_seed_8201]
+  initialization_seeds: [8201]
+  hidden_size: 32
+  batch_size: 16
+  max_optimizer_steps: 20
+  min_optimizer_steps: 4
+  validation_interval_steps: 2
+  early_stopping_patience_checks: 4
+  deployment_scales: [0.02, 0.10]
+  primary_scale: 0.10
+  time_bins:
+    - {id: quick_000_004, start: 0, stop: 5}
+    - {id: quick_005_009, start: 5, stop: 10}
+    - {id: quick_010_014, start: 10, stop: 15}
+    - {id: quick_015_019, start: 15, stop: 20}
+
+outputs:
+  directory: outputs/s4_student_state_aggregation_v1
+  quick_directory: outputs/s4_student_state_aggregation_v1_quick_r2
+
+tracked_source_files:
+  - scripts/train_s4_student_state_aggregation.py
+  - src/runtime.py
+  - src/training_progress.py
+  - src/rl/residual_control.py
+  - src/rl/s4_student_state_aggregation.py
+  - src/rl/s4_baseline_state_imitation.py
+  - src/rl/s4_closed_loop_shift.py
+  - src/rl/s4_high_order_learnability.py
+  - src/rl/s4_high_order_capacity.py
+  - src/rl/s4_oracle_bound.py
+  - src/rl/s4_representation_capacity.py
+  - src/rl/s4_r2_diagnostic.py
+  - src/rl/s4_training.py
+  - src/simulation/config.py
+  - src/simulation/controllers.py
+  - src/simulation/env.py
+  - src/simulation/hardware_effects.py
+  - src/simulation/modes.py
+  - src/simulation/robust_control.py
+  - src/simulation/turbulence.py

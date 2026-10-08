@@ -1,0 +1,29 @@
+stage: S4-D2-R5-3-R3
+purpose: one_time_independent_confirmation_of_d2_frozen_global_scale
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+source_bundle_sha256: ccdc31faaa155361d8bd3e19ffc5bb82705f425a0ef4c7f58dd7f70831efd956
+parent: configs/experiments/s4_r5_policy_training_v1.yaml
+parent_sha256: 3f8f2cd5a8ffacd08e91f1606889f97a94b175b574180a725a0f706d2e08498e
+training_output: outputs/s4_r5_policy_training_v4
+training_summary_sha256: 2bcd9a87290cd7d37eeaafcee5c7f2b08f5a42ec58fe88d4e5e0fc99ac8efa5d
+checkpoints:
+  policy_0_02000.pt: 236f4ee3b83885181555b064e37391cb9fc8b93c260bcd076effa753620c78d0
+  policy_1_02000.pt: 653600beb3829ec62ac901d2447322fc4dafaf25e32dafde8f51fe65e9a3929c
+  policy_2_02000.pt: 2b4589eb6fdc93f6dd042f65b632b982f96bfb3042db98280d97ab8a9249ca49
+development_config: configs/experiments/s4_r5_margin_development_d2_v1.yaml
+development_config_sha256: cdec09b16247ac26b677a96a1fc74e7765da4b87601f7ed79c4d4e79a861c8da
+development_entry_sha256: 5205e3cc6772a11b0d2df33d807ca08efa70bdab7eb2aaa1cac4acfb8051719d
+development_output: outputs/s4_r5_margin_development_d2_v1
+development_hashes:
+  summary.json: 7c9f944801f105629354e16696151ea0c13682e89cb65734402ed7682400a5b2
+  records.jsonl: ae2c168dfcb4c9f4757f4c66542aed69874dce9e972378d3bc43d6e3308b260b
+  stream_manifest.json: 2c61d6e82807ed038c6d72adf503ca0d026f528c3064df50a0a905a49ff598b4
+  SUCCESS.json: ff7781ed8cf62fd9e4b56822e79e21a6722578c80063bd5061d627130ac9695a
+selected_scale: 1.75
+data: {seed_base: 6300000, seed_stride: 10, weather_count: 64, episode_length: 200}
+quick: {seed_base: 6310000, weather_count: 1, episode_length: 16, profile_ids: [nominal, combined_moderate]}
+statistics: {bootstrap_seed: 6323456, bootstrap_repeats: 20000}
+thresholds: {relative_power_gain: 0.01, maximum_safety_increase: 0.001}
+output_directory: outputs/s4_r5_independent_confirmation_r3_v1
+quick_directory: outputs/s4_r5_independent_confirmation_r3_v1_quick
+boundary: {training_updates: 0, real_slm_actions: false, automatic_retry: false, old_confirmation_access: false}

@@ -1,0 +1,15 @@
+stage: S4-D2-R4-1B2-AMPLITUDE-PROBE
+upstream: outputs/s4_r4_closed_loop_v1
+upstream_sha256: 2168718de6f61e796cf05d41d08dac0122cbbcfede54ded900e2b8c2e2d16d8f
+parent: configs/experiments/s4_r4_dynamics_v1.yaml
+output_directory: outputs/s4_r4_amplitude_probe_v1
+probe_steps: [8, 40, 100, 180]
+multipliers: [0.0, 0.5, 1.0, 1.5]
+horizon: 8
+bootstrap_seed: 3769701
+bootstrap_repeats: 20000
+physical_transitions: 177408
+model_forward_samples: 221184
+device: cuda
+training_updates: 0
+automatic_retry: false

@@ -1,0 +1,7 @@
+source_directory: outputs/s4_r4_amplitude_closed_loop_v1
+quick_source_directory: outputs/s4_r4_amplitude_closed_loop_v1_quick
+experiment_config: configs/experiments/s4_r4_amplitude_closed_loop_v1.yaml
+source_snapshot: configs/experiments/s4_r4_amplitude_recovery_v1_snapshot.json
+output_directory: outputs/s4_r4_amplitude_closed_loop_recovery_v2
+expected_reused_batches: 33
+automatic_retry: false

@@ -1,0 +1,15 @@
+stage: S4-D2-R4-1B2-D1-CANDIDATE-RESELECTION
+source_metrics: outputs/s4_r4_closed_loop_ranking_v3/metrics.pt
+finalized_summary: outputs/s4_r4_closed_loop_ranking_v4_finalized/summary.json
+finalized_success: outputs/s4_r4_closed_loop_ranking_v4_finalized/SUCCESS.json
+output_directory: outputs/s4_r4_candidate_reselection_v1
+source_files:
+  outputs/s4_r4_closed_loop_ranking_v3/metrics.pt: 44149af394df2c5ec59e8e0798044478425bc6facecdc384da194a778bd1838c
+  outputs/s4_r4_closed_loop_ranking_v4_finalized/summary.json: 17ef34d9acd3f506f7d71d10f7849d5c33e1c0a85b35c1110a871efb25bb945f
+  outputs/s4_r4_closed_loop_ranking_v4_finalized/SUCCESS.json: dbbfbe62ec9c0698aa44b8e5ae304f912deb22f3b4a3c67c8bee8f1136779bf3
+folds: 4
+split_seed: 3770101
+bootstrap_seed: 3770201
+bootstrap_repeats: 20000
+disagreement: 1.0
+automatic_retry: false

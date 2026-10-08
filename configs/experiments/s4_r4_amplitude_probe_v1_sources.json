@@ -1,0 +1,7 @@
+{
+  "src/rl/r4_amplitude_probe.py": "29618294a15ac73db15b3babb29977e0b740149ba524131da95059fc8c240aad",
+  "scripts/diagnose_s4_r4_amplitude.py": "b5da4a638fc0c47ebd7f188b129e53946ab9ca794a78d40efe107984b4d28f88",
+  "configs/experiments/s4_r4_amplitude_probe_v1.yaml": "159d9340a6ffd1080e9b4d8acf543c485e257a4783616167254cf89d6db511a3",
+  "tests/test_r4_amplitude_probe.py": "828783516ca5a8dd3fa750c289b67a9a507d0bedd6c87c7038bef355665db7d5",
+  "docs/S4-D2-R4-1B2同状态动作力度诊断.md": "289e7e71d5bb4e39c66460282469429b56994fb438702f016b7315165cc340f0"
+}

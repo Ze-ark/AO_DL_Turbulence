@@ -1,0 +1,7 @@
+{
+  "src/rl/r4_response_attribution.py": "fabd5ea4ff412516b304adff482b5d9219c57bea07eb01ca976ca38c75fb9bd5",
+  "scripts/diagnose_s4_r4_response_attribution.py": "86fcebed51b687eca1340f12bb749dee1eb548b0377f127c069978882ca6e920",
+  "tests/test_r4_response_attribution.py": "ef07428a68fb5f6f792e011684788dbb129203b1618bbf331d437846051c4ba1",
+  "configs/experiments/s4_r4_response_attribution_v1.yaml": "113e633436ed2a43aed0944bc0ec6feadf018979f889a334621b54b2ac5f6096",
+  "docs/S4-D2-R4-1B1-D1历史与命令续推诊断准备.md": "1c45b6514768bcc5ca41c416da61e446a7137b2964e8f406e83390e350fdde71"
+}

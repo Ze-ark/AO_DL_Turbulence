@@ -1,0 +1,14 @@
+stage: S4-D2-R4-1B2-AMPLITUDE-CLOSED-LOOP
+upstream: outputs/s4_r4_amplitude_probe_v1
+upstream_sha256: 213f7f2d3302b462eb6f4277927c2097b7213f021dab352115229ea999b07724
+parent: configs/experiments/s4_r4_dynamics_v1.yaml
+output_directory: outputs/s4_r4_amplitude_closed_loop_v1
+controllers: [gru_mpc, gru_mpc_x15]
+development_starts: [3762048, 3762304, 3762560]
+search_seed: 3769600
+bootstrap_seed: 3769702
+bootstrap_repeats: 20000
+physical_transitions: 230400
+max_model_forward_samples: 2831155200
+training_updates: 0
+automatic_retry: false

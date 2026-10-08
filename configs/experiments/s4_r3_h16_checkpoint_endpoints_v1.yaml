@@ -1,0 +1,111 @@
+# A8-D3：只读比较原最佳/末次模型；禁止训练和独立测试样本访问。
+metadata:
+  stage: "S4-D2-R3-D2-A8-D3"
+  experiment_id: "AO-S4-D2-R3-D2-A8-D3-CHECKPOINT-ENDPOINTS"
+  version_label: "s4d2_r3_d2a8_d3_checkpoint_endpoints_v1"
+  diagnostic_only: true
+  post_hoc_mechanism_diagnostic: true
+  allow_checkpoint_loading: true
+  allow_checkpoint_gradient_read: true
+  allow_training: false
+  allow_optimizer_updates: false
+  allow_new_data_generation: false
+  allow_independent_test_access: false
+  allow_full_rl_training: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+inputs:
+  plan: "docs/S4-D2-R3-D2-A8-D3最佳与末次模型对照诊断设计.md"
+  inventory: "docs/S4-D2-R3-D2-A8-D3检查点与日志清点记录.md"
+  d2_audit: "docs/S4-D2-R3-D2-A8-D2训练验证梯度翻转来源诊断审计记录.md"
+  d1_config: "configs/experiments/s4_r3_h16_gradient_conflict_v1.yaml"
+  d1_summary: "outputs/s4_r3_h16_gradient_conflict_v1/summary.json"
+  d1_success: "outputs/s4_r3_h16_gradient_conflict_v1/SUCCESS.json"
+  d1_gradients: "outputs/s4_r3_h16_gradient_conflict_v1/episode_gradient_metrics.csv"
+  d2_summary: "outputs/s4_r3_h16_gradient_shift_v1/summary.json"
+  d2_success: "outputs/s4_r3_h16_gradient_shift_v1/SUCCESS.json"
+  training_fits: "outputs/s4_r3_h16_head_split_v1/training_fits.json"
+  training_frozen: "outputs/s4_r3_h16_head_split_v1/TRAINING_FROZEN.json"
+
+frozen_files:
+  docs/S4-D2-R3-D2-A8-D3最佳与末次模型对照诊断设计.md: "f8948073268ce449fef64e364b3ebca9e24b02bc3c1a95bdefa8365aa43bb52b"
+  docs/S4-D2-R3-D2-A8-D3检查点与日志清点记录.md: "786195c10f6da8c7c6b8ecec438919bfd85bfab98e4361aaef110280ef38bfd2"
+  docs/S4-D2-R3-D2-A8-D2训练验证梯度翻转来源诊断审计记录.md: "5356ab7fda4369bae3813c56983c3934cfd90c0d99e091b80c5bed6919c3bb92"
+  configs/experiments/s4_r3_h16_gradient_conflict_v1.yaml: "9202927d9ef15aa1625ce3d40949bd66a49197392c9608835a34bc4325f1c2b5"
+  outputs/s4_r3_h16_gradient_conflict_v1/summary.json: "a8f598be2b5dc3d2bc8f0fb598f7f90585ef9f81312d0cdcb1c6225699a2328c"
+  outputs/s4_r3_h16_gradient_conflict_v1/SUCCESS.json: "7002e3c9a58a10c69867da7f15046f73a4f23934afeeaef55a0cd59d5735fb21"
+  outputs/s4_r3_h16_gradient_conflict_v1/episode_gradient_metrics.csv: "ccef8aa23dba27feefab7c5420098d0efa5ae75db3d41c042f21e66538a2cc3b"
+  outputs/s4_r3_h16_gradient_shift_v1/summary.json: "36454400c39f42078b3cf7057f431921bb56d484d9d37d17cfa08c7d90bc9266"
+  outputs/s4_r3_h16_gradient_shift_v1/SUCCESS.json: "efdfee8815bddaeb5481c1e6127b7afb0373456b573af93b5678ef8c31559725"
+  outputs/s4_r3_h16_head_split_v1/training_fits.json: "6849e6bfc34d09491b5ba6bdfe13f81965d666de97676a8ab67be502a92124c6"
+  outputs/s4_r3_h16_head_split_v1/TRAINING_FROZEN.json: "d1c11d7465d427d40605e6aede5c359ed656f386a5c8bb5da9ce5df6ac30e5d6"
+
+frozen_sources:
+  src/rl/s4_r3_h16_gradient_conflict.py: "0f87a3bd3eb43f021505f8ee49e42f5ba6cd9c8a12d69c6f3e50a8fa2c9ebfb4"
+  src/rl/s4_r3_h16_gradient_shift.py: "b248cfccdb0ac74eb84c486d0783c30fde36e37963fa6d2b78fff252bc18ab0e"
+  src/rl/s4_r3_h16_head_split.py: "fe2aacb85f2f7ec5d594e0706b3677b00385926ff7c7d3088ad38cca295e7fd8"
+  src/rl/s4_r3_h16_data_scaling.py: "7bc3efb7843170661d9fbcc8e6cdb59fb15d6e4557a014a886885a45ff5fd213"
+  src/rl/s4_r3_h16_reward_pairwise_probe.py: "04ec0a203443b976f339d0533aa199d55cd5be0838f636f07ce1645fea5d3adc"
+  src/rl/s4_training.py: "e8594ccf27b195f2a0356d37600b869d081cc0d9989694698403ca09f10de3a7"
+  src/runtime.py: "b23c42dc34d843ba7d1a1ae7a36f3af77aa07d9b3a12d05e2a85d47d5dfa8dd4"
+  src/training_progress.py: "336da974903915f8bca3a2a0415d7db81c414bcffab916647992ad6809adcbde"
+
+design:
+  policy_seeds: [9301,9302,9303]
+  arms: ["shared","split"]
+  splits: ["training","validation"]
+  checkpoint_roles: ["best","last"]
+  feature_size: 221
+  hidden_size: 256
+  target_horizon: 16
+  pairs_per_episode: 18
+  maximum_updates: 10000
+  validation_interval_updates: 100
+  huber_delta: 1
+  balanced_sign_weight: 0.25
+  statistical_unit: "complete_episode_seed"
+
+comparison:
+  bootstrap_replicates: 20000
+  bootstrap_seed: 890000
+  familywise_alpha: 0.05
+  family_size: 6
+  meaningful_gap_change: 0.2
+  minimum_supporting_seeds: 2
+
+alignment:
+  atol: 0.000001
+  rtol: 0.00001
+  balanced_accuracy_atol: 0.000001
+
+runtime:
+  device: "cuda"
+  require_cuda: true
+  deterministic_algorithms: true
+
+quick:
+  policy_seeds: [9301]
+  episodes_per_condition: 2
+  bootstrap_replicates: 100
+
+outputs:
+  directory: "outputs/s4_r3_h16_checkpoint_endpoints_v1"
+  quick_directory: "outputs/s4_r3_h16_checkpoint_endpoints_v1_quick"
+
+tracked_source_files:
+  - "configs/experiments/s4_r3_h16_checkpoint_endpoints_v1.yaml"
+  - "scripts/diagnose_s4_r3_h16_checkpoint_endpoints.py"
+  - "src/rl/s4_r3_h16_checkpoint_endpoints.py"
+  - "tests/test_s4_r3_h16_checkpoint_endpoints.py"
+  - "docs/S4-D2-R3-D2-A8-D3最佳与末次模型对照诊断设计.md"
+  - "src/rl/s4_r3_h16_gradient_conflict.py"
+  - "src/rl/s4_r3_h16_gradient_shift.py"
+  - "src/rl/s4_r3_h16_head_split.py"
+  - "src/rl/s4_r3_h16_data_scaling.py"
+  - "src/rl/s4_r3_h16_reward_pairwise_probe.py"
+  - "src/rl/s4_training.py"
+  - "src/runtime.py"
+  - "src/training_progress.py"
+
+

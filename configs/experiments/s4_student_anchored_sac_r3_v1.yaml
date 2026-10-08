@@ -1,0 +1,269 @@
+metadata:
+  stage: S4-D2-R3
+  purpose: frozen_student_anchored_small_residual_sac
+  hypothesis: a_small_sac_correction_can_recover_teacher_student_headroom_without_destroying_the_passing_student_controller
+  progress_stage_label: S4-D2-R3
+  user_authorized_next_stage: true
+  allow_real_hardware_actions: false
+  allow_sealed_test_access: false
+  allow_algorithm_change: false
+  allow_reward_change: false
+  allow_total_action_budget_increase: false
+  allow_student_finetuning: false
+  allow_second_aggregation_round: false
+
+upstream_student_aggregation:
+  summary: outputs/s4_student_state_aggregation_v1/summary.json
+  summary_sha256: fa0610ddfbd4964076a44180b8c4cefd3572798a93ebe4e86022b0450f0d5bd3
+  preflight: outputs/s4_student_state_aggregation_v1/preflight.json
+  preflight_sha256: 164937f179819de88c69f964911c2ef769f48437de917af52ac997b6659138a5
+  effective_config: outputs/s4_student_state_aggregation_v1/effective_config.json
+  effective_config_sha256: 4bbf9b1b1cf94375a51c0c1ab7dc66c252b54af8712072dd195aba25424a957a
+  source_manifest: outputs/s4_student_state_aggregation_v1/source_manifest.json
+  source_manifest_sha256: 37697f0df64eb065f59bc98d31212b4233b3d694003e35f743b915bf90be4386
+  audit_record: docs/S4-D2-R2单轮学生状态聚合监督实验审计记录.md
+  audit_record_sha256: a31093aea9183876015399a38f222b1c73394678c8aa24e4cdde11c1b9430b72
+
+environment_config: configs/environment/s1_taylor_v1.yaml
+environment_config_sha256: c14ddc5cf7c21a586cabdfa2554f0f1fb9e7781d2ea990d9e047885e957f09e5
+hardware_profile_source: configs/experiments/s4_hardware_stress_v1.yaml
+hardware_profile_source_sha256: ea254b082b89ded36672244606cc464fce92230be4a98d0bf1456b51b2ba6488
+
+representation:
+  id: zernike_21_added_11
+  kind: zernike
+  num_modes: 21
+  anchor_modes: 10
+  output_modes: 11
+  pseudoinverse_rcond: 0.00001
+
+frozen_controller:
+  id: tracking_conservative
+  active_anchor_modes: 10
+  kind: tracking_leaky_integrator
+  parameters:
+    gain: 0.25
+    leak: 0.10
+    tracking_gain: 0.50
+    max_request_step_rad: 0.15
+
+student_anchor:
+  kind: frozen_student_aggregate_mlp
+  hidden_size: 256
+  deployment_scale: 0.50
+  output_modes: 11
+  finetune: false
+
+policy_observation:
+  history_frames: 4
+  state_size: 210
+  normalization_source: paired_frozen_student_checkpoint
+  include_future_truth: false
+  include_oracle_quality_metrics: false
+  include_hardware_profile_identifier: false
+
+action:
+  residual_action_limit_rad: 0.05
+  correction_component_limit_rad: 0.0125
+  final_action_step_limit_rad: 0.15
+  preserve_total_phase_rms_budget: true
+  total_budget_anchor_modes: 10
+  preserve_environment_modal_limit: true
+
+# 兼容冻结教师评估器；数值必须与上面的动作预算相同。
+action_budget:
+  residual_component_limit_rad: 0.05
+  final_component_step_limit_rad: 0.15
+  preserve_total_phase_rms_budget: true
+  total_budget_anchor_modes: 10
+
+teacher:
+  preview_horizon_frames: 2
+  uses_future_simulator_truth_for_labels: true
+  uses_exact_registration_for_labels: true
+
+reward:
+  measured_power_weight: 1.0
+  residual_action_weight: 0.01
+  violation_weight: 0.50
+  action_penalty_applies_to: sac_correction_only
+  scientific_metrics_are_separate: true
+
+sac:
+  hidden_size: 256
+  learning_rate: 0.0003
+  gamma: 0.99
+  tau: 0.005
+  initial_alpha: 0.05
+  replay_buffer_size: 500000
+  replay_storage_device: cpu
+  batch_size: 256
+  warmup_transitions: 20000
+  total_transitions_per_seed: 499200
+  updates_per_environment_step: 4
+  validation_interval_transitions: 50000
+  checkpoint_interval_transitions: 100000
+  log_interval_transitions: 2048
+
+arms:
+  - student_backbone
+  - random_backbone
+
+policy_seeds: [9301, 9302, 9303]
+training_environment_seed_bases: [3500000, 3520000, 3540000]
+training_seed_span_per_policy: 10000
+
+student_checkpoints:
+  - id: aggregate_mlp_seed_8201
+    initialization_seed: 8201
+    path: outputs/s4_student_state_aggregation_v1/student_aggregate/checkpoints/mlp_seed_8201_best.pt
+    sha256: 474177735a7fb2f465e671a44e0b085dc4c77fbd6af839f13122c581f3efd5e8
+  - id: aggregate_mlp_seed_8202
+    initialization_seed: 8202
+    path: outputs/s4_student_state_aggregation_v1/student_aggregate/checkpoints/mlp_seed_8202_best.pt
+    sha256: b3587546f8ea3b41a7166ac533f20a2af4cca704e963ff607dbba5d7c7093ec2
+  - id: aggregate_mlp_seed_8203
+    initialization_seed: 8203
+    path: outputs/s4_student_state_aggregation_v1/student_aggregate/checkpoints/mlp_seed_8203_best.pt
+    sha256: e7c6bc1720265ed22facb28fc5f6784249b8c70ec120aff58048dbf4a193fb4e
+
+training_physical_conditions:
+  - id: r3_train_frozen
+    regime: frozen_stationary
+    wind_speed_mps: 0.45
+    wind_direction_deg: 15.0
+    slm_delay_frames: 2
+  - id: r3_train_boiling
+    regime: boiling_stationary_wind
+    wind_speed_mps: 0.55
+    wind_direction_deg: 60.0
+    frozen_flow_rho: 0.995
+    slm_delay_frames: 2
+  - id: r3_train_combined
+    regime: boiling_varying_wind_noisy
+    wind_speed_mps: 0.60
+    wind_direction_deg: 75.0
+    frozen_flow_rho: 0.995
+    wind_speed_modulation_fraction: 0.15
+    wind_direction_modulation_deg: 15.0
+    wind_modulation_period_frames: 80
+    wind_modulation_phase_deg: 135.0
+    slm_delay_frames: 2
+
+training_hardware_profile_ids:
+  - nominal
+  - delay_3
+  - settling_050
+  - registration_moderate
+  - registration_severe
+  - combined_moderate
+
+validation_physical_conditions:
+  - id: r3_val_frozen
+    regime: frozen_stationary
+    base_seed: 3600000
+    wind_speed_mps: 0.525
+    wind_direction_deg: 30.0
+    slm_delay_frames: 2
+  - id: r3_val_boiling
+    regime: boiling_stationary_wind
+    base_seed: 3610000
+    wind_speed_mps: 0.625
+    wind_direction_deg: 45.0
+    frozen_flow_rho: 0.995
+    slm_delay_frames: 2
+  - id: r3_val_combined
+    regime: boiling_varying_wind_noisy
+    base_seed: 3620000
+    wind_speed_mps: 0.50
+    wind_direction_deg: 85.0
+    frozen_flow_rho: 0.995
+    wind_speed_modulation_fraction: 0.15
+    wind_direction_modulation_deg: 15.0
+    wind_modulation_period_frames: 80
+    wind_modulation_phase_deg: 270.0
+    slm_delay_frames: 2
+
+interval_validation_profile_ids:
+  - nominal
+  - settling_050
+  - registration_severe
+
+final_validation_profile_ids:
+  - nominal
+  - delay_3
+  - settling_050
+  - registration_moderate
+  - registration_severe
+  - combined_moderate
+
+validation:
+  episodes_per_physical_condition: 16
+  steps: 200
+  deterministic_policy: true
+  compare_on_identical_episode_seeds: true
+  persist_per_episode_records: true
+
+gate:
+  min_relative_power_gain_vs_traditional: 0.02
+  min_power_delta_ci95_low: 0.0
+  min_strehl_delta_ci95_low: 0.0
+  max_phase_rmse_delta_ci95_high: 0.0
+  max_violation_fraction: 0.05
+  max_projection_fraction: 0.05
+  min_teacher_headroom_recovery_fraction: 0.50
+  projection_tolerance_rad: 0.0000001
+  require_every_main_seed: true
+  require_all_profiles: true
+
+diagnostic_seed_base: 3700000
+reserved_s4d3_seed_base: 4000000
+
+quick:
+  total_transitions_per_seed: 512
+  warmup_transitions: 128
+  replay_buffer_size: 2048
+  batch_size: 64
+  updates_per_environment_step: 1
+  validation_interval_transitions: 256
+  checkpoint_interval_transitions: 512
+  log_interval_transitions: 64
+  environment_batch_size: 4
+  episode_length: 32
+  validation_steps: 16
+  policy_seeds: [9301]
+  training_environment_seed_bases: [3590000]
+  training_hardware_profile_ids: [nominal, registration_severe]
+  validation_hardware_profile_ids: [nominal]
+  validation_physical_conditions:
+    - id: r3_quick_val
+      regime: boiling_stationary_wind
+      base_seed: 3699000
+      wind_speed_mps: 0.575
+      wind_direction_deg: 52.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+
+outputs:
+  directory: outputs/s4_student_anchored_sac_r3_v1
+  quick_directory: outputs/s4_student_anchored_sac_r3_v1_quick
+
+tracked_source_files:
+  - scripts/train_s4_r3_student_anchored_sac.py
+  - src/runtime.py
+  - src/training_progress.py
+  - src/rl/student_anchored_control.py
+  - src/rl/s4_r3_student_anchored_sac.py
+  - src/rl/residual_control.py
+  - src/rl/residual_sac.py
+  - src/rl/s4_closed_loop_shift.py
+  - src/rl/s4_high_order_learnability.py
+  - src/rl/s4_representation_capacity.py
+  - src/rl/s4_training.py
+  - src/simulation/config.py
+  - src/simulation/controllers.py
+  - src/simulation/env.py
+  - src/simulation/hardware_effects.py
+  - src/simulation/modes.py
+  - src/simulation/robust_control.py
+  - src/simulation/turbulence.py

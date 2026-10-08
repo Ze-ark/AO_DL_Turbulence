@@ -1,0 +1,25 @@
+stage: S4-D2-R5-G2-D7
+purpose: frozen_full_horizon_hard_forward_scale_finite_difference_development_diagnostic
+runtime: {device: cuda, diagnostic_owner: assistant_under_user_goal, automatic_retry: false}
+g2_d6_config: configs/experiments/s4_r5_g2_d6_full_objective_v1.yaml
+g2_d6_config_sha256: c7efffbe49077c0e040bd2514901fc84cb19f151715b21f0efd2065a803cb09d
+g2_d6_entry_sha256: 11474a3da009a52f5c04f0fec9fcf98164bc7f255c7c91245b66db65d21b4a80
+g2_d6_output: outputs/s4_r5_g2_d6_full_objective_v1
+g2_d6_output_hashes:
+  summary.json: 086eadd4901260b377e1e9b2a030c7d9bb97525d09cc479a47880b2561be901b
+  groups.jsonl: 7957471129147abc204b70355ba4ca53fb94158087943a6481e0e6119ad2f00e
+  records.jsonl: 7d8d9251bdff3b18740e5deff6eb9e588db9a71b35ed44df41538e9517bf78fa
+  progress.jsonl: 3f4d86ae98ccfeded852dde1b6d94fa420fcb40c327c7ee7a4407862cb1a06ec
+  stream_manifest.json: 290ca7adc5b711a44db8289b1d2f97e87ef6af9c554d89fe58a52fec1718759e
+  SUCCESS.json: 48afc1bd594a385203c7faa85c46c0484c11983c12478a84dda671fecc35c002
+controllers: [train_scale_1, train_scale_1_75]
+hardware_conditions: [nominal_clone, hardware_shift]
+deployment_scales: [1.6625, 1.8375]
+center_deployment_scale: 1.75
+direction_epsilon: 0.000001
+metric_delta_epsilon: 0.0000001
+data: {seed_base: 7340000, seed_stride: 10, weather_count: 2, episode_length: 200, initializations: 3}
+quick: {seed_base: 7360000, weather_count: 1, episode_length: 16, initializations: 1}
+output_directory: outputs/s4_r5_g2_d7_hard_forward_v1
+quick_directory: outputs/s4_r5_g2_d7_hard_forward_v1_quick
+boundary: {confirmation_access: false, training_updates: 0, optimizer_updates: 0, real_slm_actions: false, automatic_retry: false, historical_results_read_only: true, independent_confirmation: false}

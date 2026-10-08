@@ -1,0 +1,195 @@
+# 研究设计清单，不是可执行配置。不可传给任何旧训练入口。
+stage: S4-D2-R5
+design_only: true
+runnable: false
+status: DESIGN_READY_IMPLEMENTATION_PENDING
+entrypoint: null
+design_document: docs/S4-D2-R5可微物理引导残差策略设计.md
+next_plan: docs/S4-D2-R5-0物理梯度与因果接口验证计划.md
+origin_skill: academic-research-suite
+verification_status: UNVERIFIED
+
+upstream:
+  summary: outputs/s4_r4_closed_loop_repair_v1/summary.json
+  summary_sha256: 54146c3cc971f14c89997be9bc20f73347eca75e1f44dd1eee70ca180c85d297
+  required_status: REPAIR_PREDICTION_FAIL_REQUIRES_AUDIT
+  r4_revision_chain: CLOSED
+  change_r4_threshold: false
+  reuse_old_actor_or_critic: false
+
+runtime:
+  device: cuda
+  require_cuda: true
+  resolver: src/runtime.py
+  formal_training_launcher: user_ide_only
+
+observation:
+  source: simulation_residual_proxy_not_holography
+  frame_size: 79
+  history_frames: 8
+  residual_modes: 21
+  transform: residual_minus_causal_estimated_applied
+  additional_online_information: false
+  hidden_state_reset: per_history_window
+  forbidden: [true_applied_modal, true_turbulence, true_registration, future_randomness, oracle_strehl, hidden_profile_id]
+  power_timing: current_turbulence_after_slm_step_before_turbulence_advance
+  residual_timing: next_turbulence_after_turbulence_advance
+
+action:
+  total_modes: 21
+  classical_base_output_modes: 21
+  learned_correction_modes: 11
+  learned_mode_indices_zero_based: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+  normalized_limit: 1.0
+  correction_component_limit_rad: 0.0125
+  residual_component_limit_rad: 0.05
+  final_step_limit_rad: 0.15
+  cumulative_modal_limit_rad: 3.0
+  legacy_norm_reference_modes: 10
+  projection_contract: src/rl/r4_control.py
+  shared_with_baselines: true
+
+physics:
+  grid_size: 64
+  episode_frames: 200
+  dt_s: 0.01
+  learned_power_head: false
+  physical_training_state_access: internal_simulator_only
+  privileged_training_gradients: true
+  deployment_full_field_access: false
+  training_quantizer_forward: exact_original_hard_quantizer
+  training_quantizer_backward: identity_surrogate_unverified
+  clipping_backward: piecewise_true_derivative
+  independent_judge: original_hard_environment
+  original_environment_mutation: false
+
+baselines:
+  candidates: [frozen_r4_integrator, pseudo_open_loop_linear_predictive, data_driven_subspace_predictive]
+  maximum_configurations: 9
+  configuration_counts: [1, 4, 4]
+  parameter_grid_frozen: false
+  fitting_split: training_only
+  selection_split: baseline_development
+  confirmation_parameter_updates: false
+  strong_baseline_gate_before_policy: true
+
+policy:
+  algorithm: full_episode_physics_gradient_residual_policy_optimization
+  gru_hidden_size: 64
+  head_hidden_size: 64
+  output_size: 11
+  output_initialization: zero
+  learned_q_network: false
+  terminal_value_bootstrap: false
+  learned_dynamics_or_power_predictor: false
+  discount: 1.0
+  horizon: 200
+  gradient_checkpointing: true
+  detach_between_time_segments: false
+  base_frozen: true
+
+objective:
+  primary_training_signal: measured_power_in_bucket
+  normalized_correction_square_weight: 0.01
+  normalized_correction_difference_square_weight: 0.001
+  previous_correction_at_reset: zero
+  scientific_metric: unpenalized_power_in_bucket
+
+training_proposal:
+  execution_authorized: false
+  prerequisites: [r5_0_all_checks_pass, r5_1_strong_baseline_gate_pass, executable_config_frozen]
+  initializations: 3
+  updates_per_initialization: 2000
+  logical_batch_episodes: 18
+  micro_batch_candidates: [1, 2]
+  balanced_families_and_profiles: true
+  optimizer: adam
+  learning_rate: 0.0001
+  gradient_norm_limit: 1.0
+  checkpoint_interval_updates: 100
+  primary_checkpoint: final_only
+  main_forward_transitions: 21600000
+  backward_and_recomputation_counted_separately: true
+  crash_auto_resume: false
+
+data_proposal:
+  seed_collision_audit: PENDING_EXPANDED_STREAM_CHECK
+  family_offsets: [0, 4096, 8192]
+  diagnostic_base: 5200000
+  training_base: 5210000
+  baseline_development_base: 5230000
+  policy_development_base: 5240000
+  confirmation_base: 5260000
+  policy_initialization_seeds: [5299001, 5299002, 5299003]
+  training_weather_per_family: 256
+  baseline_development_weather_per_family: 24
+  policy_development_weather_per_family: 32
+  confirmation_weather_per_family: 32
+  diagnostic_weather_per_family: 4
+  training_collectors: [anchor, bounded_excitation]
+  hardware_profiles: [nominal, delay_3, settling_050, registration_moderate, registration_severe, combined_moderate]
+  family_definitions_source: configs/experiments/s4_r4_dynamics_v1.yaml
+  split_unit: complete_weather_all_profiles_and_controllers
+  forbidden_reuse: [r4_sealed_tests, r4_reserved_confirmation_3796000, s4_d3]
+  confirmation_access: false
+
+r5_0_proposal:
+  training_updates: 0
+  parity_forward_transitions: 28800
+  continuous_gradient_forward_samples: 3456
+  surrogate_gradient_forward_samples: 14400
+  hard_direction_forward_transitions: 100800
+  total_forward_samples_excluding_unit_tests_and_recompute: 147456
+  phase_atol_rad: 0.000001
+  power_atol: 0.000001
+  continuous_gradient_atol: 0.00001
+  continuous_gradient_rtol: 0.001
+  direction_scales: [0.10, 0.25, 0.50]
+  primary_direction_scale: 0.25
+  minimum_positive_weather_count: 9
+  diagnostic_weather_count: 12
+  hard_profile_mean_direction_difference_nonnegative: true
+  primary_positive_direction_vs_zero_mean_positive: true
+  scientific_performance_claim: false
+
+budget_proposal:
+  baseline_collection_transitions: 1843200
+  baseline_selection_transitions: 777600
+  main_policy_training_transitions: 21600000
+  main_final_development_transitions: 576000
+  two_ablation_training_transitions: 43200000
+  additional_ablation_development_transitions: 691200
+  independent_confirmation_transitions: 576000
+  includes_backward_or_recompute: false
+  complete_runtime_budget_frozen: false
+
+ablations_proposal:
+  enabled_only_after_main_development_pass: true
+  arms: [same_network_ppo_full_monte_carlo_no_bootstrap, physics_gradient_nominal_hardware_only]
+  full_optimizer_contract_frozen: false
+  report_training_information_difference: true
+
+evaluation_proposal:
+  primary_reference: strongest_traditional_selected_on_development
+  relative_power_gain_minimum: 0.01
+  paired_weather_absolute_difference_ci_lower_above: 0.0
+  confidence_level: 0.95
+  stratified_bootstrap_repeats: 20000
+  all_policy_seed_mean_differences_positive: true
+  all_family_and_profile_mean_differences_positive: true
+  strehl_mean_difference_minimum: 0.0
+  phase_rmse_mean_difference_maximum: 0.0
+  violation_increase_maximum: 0.001
+  saturation_increase_maximum: 0.001
+  slew_limited_increase_maximum: 0.001
+  confirmation_power_analysis: REQUIRED_BEFORE_ACCESS
+  timing_metrics: [median, p95, p99, deadline_miss_rate]
+  measured_compute_delay_stress: required_before_realtime_claim
+
+boundary:
+  automatic_training: false
+  automatic_retry: false
+  independent_confirmation_access: false
+  real_slm_actions: false
+  vendor_calibration_changes: false
+  hdf5_schema_changes: false

@@ -1,0 +1,15 @@
+# 仅恢复一次已完成的技术冒烟汇总；不生成新天气，不修改原目录。
+schema: observation_bridge_o2_development_summary_recovery_v1
+scope: existing_quick_records_summary_recovery_only
+device: cuda
+experiment_config: configs/experiments/observation_bridge_o2_development_v1.yaml
+experiment_config_sha256: 2e9582993ee979e6b15079aa8b2110b7bbff7a29f498be5bf50204de53d90eb2
+input_directory: outputs/observation_bridge_o2_development_v1_quick
+failure_sha256: 30028803e493a97d5f2183f07ea0e904686538db72eaa0df97aab371eb2fa667
+output_directory: outputs/observation_bridge_o2_development_v1_quick_summary_recovery_v1
+new_environment_transitions: 0
+training_updates: 0
+scientific_gain_analysis: false
+saved_decision_replay: true
+overwrite_original: false
+automatic_retry: false

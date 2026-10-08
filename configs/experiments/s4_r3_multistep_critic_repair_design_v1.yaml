@@ -1,0 +1,108 @@
+metadata:
+  stage: S4-D2-R3-D2-A-DESIGN
+  experiment_id: AO-S4-D2-R3-D2-A-CRITIC-TARGET-REPAIR
+  version_label: s4d2_r3_d2a_critic_target_repair_design_v1
+  purpose: predeclare_frozen_actor_multistep_critic_target_repair
+  hypothesis: a_longer_or_mixed_return_target_can_correct_the_failed_actor_ranking_before_actor_retraining
+  user_authorized_design: true
+  allow_formal_training: false
+  allow_actor_updates: false
+  allow_alpha_updates: false
+  allow_reward_change: false
+  allow_action_budget_change: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+upstream_d1c:
+  summary: outputs/s4_r3_multistep_target_v1/summary.json
+  summary_sha256: 2be58a390941c53fac9b894b06cbf881e32b0fa9a8c7c193dc9c4c9738e7b060
+  preflight: outputs/s4_r3_multistep_target_v1/preflight.json
+  preflight_sha256: 2b88cccef7f94392517f808905ba84363a705afa113ec64d048290de8d328b13
+  effective_config: outputs/s4_r3_multistep_target_v1/effective_config.json
+  effective_config_sha256: 79c6406f1a21adf2fca1188729886cb49f7ad6b5cc8b73e68a06c3ebd6cad552
+  source_manifest: outputs/s4_r3_multistep_target_v1/source_manifest.json
+  source_manifest_sha256: 4686d4fda9d75b5524bf566e610d8c87b17ee094a5ac552dbf7e2e1782426ca0
+  probe_records: outputs/s4_r3_multistep_target_v1/probe_records.csv
+  probe_records_sha256: 2dfce521f3668daa7ea847454219d2a9458850950d3af92c455845e09ad53c8d
+  episode_records: outputs/s4_r3_multistep_target_v1/episode_records.csv
+  episode_records_sha256: 5fcc265ed076e4772ab2776c494aca54ffc0ed05f0c478eb056b7ea15d027e31
+  experiment_config: configs/experiments/s4_r3_multistep_target_v1.yaml
+  experiment_config_sha256: 6146e7874979f59e07d0c5989943f1702298316f460f4eef4de99a85fdfed103
+  audit_record: docs/S4-D2-R3-D1-C多步目标偏差曲线审计记录.md
+  audit_record_sha256: 0a0ebfce5fb3d7aee06933c9965ffb97f08151ef0e1aa6679ce918f8aac77c8f
+  required_interpretation_status: BOOTSTRAP_OPTIMISM_WITH_FINITE_HORIZON_CORRECTION
+
+frozen_policy:
+  arms: [student_backbone]
+  policy_seeds: [9301, 9302, 9303]
+  deterministic_actor: true
+  update_actor: false
+  update_alpha: false
+  finetune_student: false
+
+targets:
+  - {id: one_step_control, kind: n_step, horizon: 1}
+  - {id: n_step_16, kind: n_step, horizon: 16}
+  - {id: n_step_32, kind: n_step, horizon: 32}
+  - {id: td_lambda_095, kind: truncated_td_lambda, horizon: 32, trace_lambda: 0.95}
+
+data_splits:
+  development:
+    - [3900000, 3909999]
+    - [3910000, 3919999]
+    - [3920000, 3929999]
+  validation:
+    - [3930000, 3939999]
+    - [3940000, 3949999]
+    - [3950000, 3959999]
+  mechanism_audit:
+    - [3800000, 3809999]
+    - [3810000, 3819999]
+    - [3820000, 3829999]
+  split_unit: complete_turbulence_episode
+  reserved_s4d3_seed_base: 4000000
+
+planned_training:
+  critic_networks_per_target: 2
+  hidden_size: 256
+  learning_rate: 0.0003
+  batch_size: 256
+  maximum_updates: 20000
+  early_stopping_patience: 2000
+  reward_accumulator_dtype: float64
+  network_dtype: float32
+  cuda_required: true
+  progress_fields:
+    - target_method
+    - policy_seed
+    - update
+    - validation_mse
+    - ranking_accuracy
+    - estimated_time_remaining
+    - cuda_memory
+
+gate:
+  require_every_policy_seed: true
+  actor_vs_zero_q_advantage_ci95_high: 0.0
+  min_online_q_excess_reduction_fraction: 0.80
+  min_pairwise_ranking_accuracy: 0.65
+  require_validation_mse_better_than_one_step: true
+  require_all_profiles_reported: true
+  confidence_interval: clustered_student_t
+  independent_cluster: condition_id_plus_episode_index
+  multiple_comparison_correction: holm_across_three_repairs_per_seed
+
+selection:
+  choose_only_passing_method: true
+  primary_score: validation_target_mse
+  one_standard_error_tie_break: n_step_16
+  if_none_pass: stop_before_full_rl_and_design_separate_conservative_critic
+
+tracked_source_files:
+  - scripts/check_s4_r3_multistep_critic_repair_design.py
+  - src/rl/s4_r3_multistep_critic_repair.py
+  - src/rl/s4_training.py
+  - tests/test_s4_r3_multistep_critic_repair.py
+  - docs/S4-D2-R3-D1-C多步目标偏差曲线审计记录.md
+  - docs/S4-D2-R3-D2-A多步评论家修复实验计划.md
+

@@ -1,0 +1,11 @@
+stage: S4-D2-R5-G2-D12-C
+purpose: frozen_last_checkpoint_weather_held_out_local_evaluation
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+training_config: configs/experiments/s4_r5_g2_d12_candidate_scorer_v1.yaml
+inference: {batch_size: 128, checkpoint: last, seed_aggregation: mean_of_individual_choices, future_safety_filter: false}
+statistics: {weather_bootstrap_seed: 7565000, weather_bootstrap_repeats: 5000, positive_delta_epsilon: 0.0000001, safety_tolerance: 0.001, interval_scope: descriptive_conditional_on_frozen_crossfit_models}
+methods: [original, training_constant, current, history, truth_oracle_reference]
+quick: {batch_size: 8, scientific_analysis: false}
+output_directory: outputs/s4_r5_g2_d12_held_out_evaluation_v1
+quick_directory: outputs/s4_r5_g2_d12_held_out_evaluation_v1_quick
+boundary: {training_updates: 0, new_environment_transitions: 0, confirmation_access: false, real_slm_actions: false, independent_confirmation: false, gate_reclassification: false, automatic_retry: false}

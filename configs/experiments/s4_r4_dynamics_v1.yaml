@@ -1,0 +1,57 @@
+stage: S4-D2-R4-1A
+purpose: supervised_action_conditioned_dynamics_only
+runtime: {device: cuda, require_cuda: true, formal_owner: user_ide, automatic_retry: false}
+design: configs/experiments/s4_r4_model_based_design_v1.yaml
+design_sha256: 1dbf6f5062482ec09d9809451e32b68d26ae9928e5e58517617482d7ba7422c7
+upstream_summary: outputs/s4_r4_interface_smoke_v1/summary.json
+upstream_sha256: de84d14ea82c337eb863b83389a209c6e2dd762c06cbbe2cbd7366d0aa0126f6
+environment_config: configs/environment/s1_taylor_v1.yaml
+hardware_profile_source: configs/experiments/s4_hardware_stress_v1.yaml
+profile_ids: [nominal, delay_3, settling_050, registration_moderate, registration_severe, combined_moderate]
+outputs:
+  directory: outputs/s4_r4_dynamics_v1
+  quick_directory: outputs/s4_r4_dynamics_v1_quick
+data:
+  namespace_seed: 3760000
+  train_offset: 0
+  development_offset: 2048
+  quick_offset: 4096
+  family_offsets: [0, 256, 512]
+  train_per_family: 128
+  development_per_family: 32
+  batch_episodes: 16
+  steps: 200
+  collectors: [anchor, bounded_excitation]
+  excitation_hold_steps: 4
+  excitation_amplitude: 1.0
+  sensor_seed_offset: 50000000
+  excitation_seed_offset: 70000000
+families:
+  - {id: frozen, regime: frozen_stationary, wind_speed_mps: 0.45, wind_direction_deg: 15.0, slm_delay_frames: 2}
+  - {id: boiling, regime: boiling_stationary_wind, wind_speed_mps: 0.55, wind_direction_deg: 60.0, frozen_flow_rho: 0.995, slm_delay_frames: 2}
+  - {id: varying, regime: boiling_varying_wind_noisy, wind_speed_mps: 0.60, wind_direction_deg: 75.0, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 135.0, slm_delay_frames: 2}
+# 只用于初始采集，不是已经选出的最强基座。不使用真实已加载模态。
+collector_anchor: {gain: 0.25, leak: 0.10, tracking_gain: 0.50}
+nominal_calibration: {delay_frames: 2, settling_fraction: 0.5, modal_slew_rad: 0.15, provenance: simulation_nominal_assumption_not_hardware_calibrated}
+model:
+  history_frames: 8
+  horizons: [1, 2, 4, 8]
+  ridge_alphas: [0.0001, 0.01, 1.0]
+  ridge_chunk: 2048
+  hidden_size: 64
+  member_seeds: [3769001, 3769002, 3769003]
+  input_scale_floor: 0.01
+  residual_scale_floor: 0.02
+  power_scale_floor: 0.001
+training:
+  updates_per_member: 10000
+  batch_sequences: 64
+  learning_rate: 0.0003
+  gradient_clip: 1.0
+  evaluation_interval: 500
+  # 每条开发轨迹固定5个起点；包含启动段，不从结果中挑选。
+  evaluation_starts: [0, 40, 80, 120, 160]
+  evaluation_batch: 256
+  selection: minimum_mean_normalized_mse_h1_h2_h4_h8_earliest_tie
+quick: {steps: 16, episodes_per_family: 2, batch_episodes: 2, updates_per_member: 2, batch_sequences: 4, evaluation_starts: [0, 4], evaluation_interval: 1}
+boundary: {rl_updates: 0, mpc_evaluation: false, confirmation_access: false, real_slm_actions: false, s4d3_access: false}

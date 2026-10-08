@@ -1,0 +1,23 @@
+stage: S4-D2-R5-G2-D1
+purpose: development_only_frozen_policy_action_mapping
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+g1_d3_config: configs/experiments/s4_r5_g1_d3_nominal_bridge_v1.yaml
+g1_d3_config_sha256: ff99a9e64398a6b982309158fc786fae7fc69fc3ab165f0863bafaac49766b95
+g1_d3_entry_sha256: 63ce7be078f0dfd7fec094d1bd2fbd5190195109d69f476d6b7ec73bc97b26e9
+g1_d3_output: outputs/s4_r5_g1_d3_nominal_bridge_v1
+g1_d3_output_hashes:
+  summary.json: 9bcf3e23f318aeee3a379f48bd72b37bc6a2eb1e6b302bb97b94dccd624025fb
+  records.jsonl: d520d1ce4e5cc4a214644961b36d34065d8592688f6c3460aa0d025ddd42fcc8
+  progress.jsonl: 65ae254d3e45731edf1d81ff6cdf65834d10b7b9b4b377e9bd4ad9d8dee4cdc6
+  stream_manifest.json: 09fb204e7fdcab9c24426fe96bc0324b21dd378c7803550bf1edb8919e69a80c
+  SUCCESS.json: 0d212907fd9efcfbecf698c088a4faa7a674418bcbeb77378c4fb04856a4dc7f
+selected_scale: 1.75
+smooth_epsilon: 0.000001
+mapping_ids: [hard, smooth]
+hardware_shift_profiles: [delay_1, quantization_64, lut_scale_085, observation_noise_010, power_noise_003, combined_severe]
+data: {seed_base: 6800000, seed_stride: 10, weather_count: 24, episode_length: 200}
+quick: {seed_base: 6810000, weather_count: 1, episode_length: 16}
+statistics: {bootstrap_seed: 6823456, bootstrap_repeats: 5000}
+output_directory: outputs/s4_r5_g2_d1_action_mapping_v1
+quick_directory: outputs/s4_r5_g2_d1_action_mapping_v1_quick_r2
+boundary: {confirmation_access: false, training_updates: 0, real_slm_actions: false, automatic_retry: false, historical_results_read_only: true}

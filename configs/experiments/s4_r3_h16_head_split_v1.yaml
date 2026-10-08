@@ -1,0 +1,85 @@
+metadata:
+  stage: S4-D2-R3-D2-A8
+  experiment_id: AO-S4-D2-R3-D2-A8-H16-HEAD-SPLIT
+  version_label: s4d2_r3_d2a8_head_split_v1
+  diagnostic_only: true
+  allow_new_test_generation: true
+  allow_supervised_probe_training: true
+  allow_new_training_data: false
+  allow_full_rl_training: false
+  allow_original_critic_updates: false
+  allow_actor_updates: false
+  allow_alpha_updates: false
+  allow_student_updates: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+design_contract:
+  plan: docs/S4-D2-R3-D2-A8分类与收益分离输出对照计划.md
+  plan_sha256: a4cb2d3032470790bf2c0c5d5ee8f5183822d0d0453807ed28b6c3c7c032bd2b
+  audit: docs/S4-D2-R3-D2-A7扩样结果与分组误差审计记录.md
+  audit_sha256: e133f138d53a006ce9d17ed62f72a7ad7b71a9edc60d0293f19e45b8e8aba0ab
+
+upstream_a7:
+  experiment_config: configs/experiments/s4_r3_h16_data_scaling_v1.yaml
+  experiment_config_sha256: f919425a5de8a52ddb865e2fd47631532f2684fdf113405c83ad50979fa5e37c
+  summary: outputs/s4_r3_h16_data_scaling_v1/summary.json
+  summary_sha256: 754d35124586887199b673dbf07d39f6e6d1061c2dcef4e5cc0795da1acef924
+  data_manifest: outputs/s4_r3_h16_data_scaling_v1/data_manifest.json
+  data_manifest_sha256: bb0c24c09078e06c22e2bc20a03a3931e01b149da66302f4cd347951bcdf811e
+  training_frozen: outputs/s4_r3_h16_data_scaling_v1/TRAINING_FROZEN.json
+  training_frozen_sha256: da255a12066bf615b619e7fa9e8b1edf8ca77518e22bdd7cd3fa66f2034c0c28
+  required_status: DATA_BENEFIT_NOT_CONFIRMED_AT_THIS_BUDGET
+
+design:
+  arms: [shared, split]
+  training_episodes: 384
+  maximum_updates: 10000
+  early_stopping: false
+  balanced_sign_weight: 0.25
+  selection: validation_ranking_ba_then_value_mae
+  initial_heads_identical: true
+
+data:
+  test_base_seeds: [3861000, 3871000, 3881000]
+  test_episodes_per_condition: 32
+  test_after_all_fits_frozen: true
+  reserved_s4d3_seed_base: 4000000
+
+comparison:
+  bootstrap_replicates: 20000
+  bootstrap_seed_offset: 550000
+  familywise_alpha: 0.05
+  family_size: 6
+  minimum_relative_mae_reduction: 0.05
+  ranking_noninferiority_margin: 0.02
+
+runtime:
+  device: cuda
+  require_cuda: true
+  deterministic_algorithms: true
+
+outputs:
+  directory: outputs/s4_r3_h16_head_split_v1
+  quick_directory: outputs/s4_r3_h16_head_split_v1_quick_v2
+
+quick:
+  policy_seeds: [9301]
+  old_episodes_per_condition: 2
+  maximum_updates: 8
+  validation_interval_updates: 4
+  batch_size: 32
+  cluster_bootstrap_replicates: 50
+  comparison_bootstrap_replicates: 100
+  test_seed_offset: 500
+  test_episodes_per_condition: 8
+  profile_ids: [nominal, combined_moderate]
+  probe_steps: [0, 4]
+
+tracked_source_files:
+  - configs/experiments/s4_r3_h16_head_split_v1.yaml
+  - scripts/train_s4_r3_h16_head_split.py
+  - src/rl/s4_r3_h16_head_split.py
+  - tests/test_s4_r3_h16_head_split.py
+  - docs/S4-D2-R3-D2-A8分类与收益分离输出对照计划.md
+  - docs/S4-D2-R3-D2-A7扩样结果与分组误差审计记录.md

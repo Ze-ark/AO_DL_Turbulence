@@ -1,0 +1,8 @@
+{
+  "src/rl/r4_closed_loop_repair.py": "05a2337702ecc301d5775b31437a6a4dc633994f22d316b8d47305f4b40296b8",
+  "scripts/train_s4_r4_closed_loop_repair.py": "afb0cc3fc8fccff85a9e88b6b654b582e9f844e9a131f9b517054cc63e4e85a0",
+  "scripts/run_s4_r4_repaired_closed_loop.py": "c093e7f6fe7faaaa5e4846b5d30136beced90a76c1eec28c7fa22dfce1776ea4",
+  "configs/experiments/s4_r4_closed_loop_repair_v1.yaml": "2e0f3650008034f4ed614b0a65e5b68334b7bd791aa7a560417e376ac8579d4b",
+  "tests/test_r4_closed_loop_repair.py": "6cd5f3683684d4241ab17f635d5c9ed40984042cd8337b52865d0335b30b48de",
+  "docs/S4-D2-R4-1C闭环状态动力学单轮修复设计.md": "c70140228fe7cda672059a43c34494d442e6c40a5b0778b2e2a04175fd7fc868"
+}

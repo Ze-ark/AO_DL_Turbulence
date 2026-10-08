@@ -1,0 +1,42 @@
+stage: S4-D2-R5-1
+purpose: select_strong_traditional_predictive_baseline_on_development_weather
+design_only: false
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+upstream: outputs/s4_r5_physics_check_v1
+upstream_summary_sha256: 168a8653dc6b47f2797086716903acf5790c0aae1bdb56ba50d36dbb836f6d36
+parent: configs/experiments/s4_r4_dynamics_v1.yaml
+predictor_source: outputs/s4_r4_dynamics_v1/checkpoints
+candidate_order:
+  - {kind: integrator, gain: 0.15, leak: 0.10, tracking_gain: 0.50, prediction_steps: 2}
+  - {kind: tracking, gain: 0.15, leak: 0.10, tracking_gain: 0.50, prediction_steps: 2}
+  - {kind: tracking, gain: 0.25, leak: 0.10, tracking_gain: 0.50, prediction_steps: 2}
+  - {kind: tracking, gain: 0.35, leak: 0.10, tracking_gain: 0.50, prediction_steps: 2}
+  - {kind: ridge, gain: 0.15, leak: 0.05, tracking_gain: 0.50, prediction_steps: 2}
+  - {kind: ridge, gain: 0.15, leak: 0.10, tracking_gain: 0.50, prediction_steps: 2}
+  - {kind: ridge, gain: 0.25, leak: 0.05, tracking_gain: 0.50, prediction_steps: 2}
+  - {kind: ridge, gain: 0.25, leak: 0.10, tracking_gain: 0.50, prediction_steps: 2}
+  - {kind: ridge, gain: 0.35, leak: 0.10, tracking_gain: 0.50, prediction_steps: 2}
+reference_index: 0
+violation_increase_max: 0.001
+development:
+  seed_base: 5400000
+  family_offsets: [0, 256, 512]
+  weather_per_family: 24
+  steps: 200
+  batch_size: 8
+  profile_ids: [nominal, delay_3, settling_050, registration_moderate, registration_severe, combined_moderate]
+quick: {weather_per_family: 1, steps: 16, batch_size: 1, profile_ids: [nominal, combined_moderate]}
+budget:
+  formal_physical_transitions: 777600
+  quick_physical_transitions: 864
+  training_updates: 0
+  confirmation_access: false
+  real_slm_actions: false
+  s4d3_access: false
+boundary:
+  no_r5_confirm_weather: true
+  no_policy_training: true
+  no_online_identification: true
+  no_hardware_actions: true
+output_directory: outputs/s4_r5_baseline_selection_v1
+quick_directory: outputs/s4_r5_baseline_selection_v1_quick

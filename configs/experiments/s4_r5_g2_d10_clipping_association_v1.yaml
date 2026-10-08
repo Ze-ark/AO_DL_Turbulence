@@ -1,0 +1,27 @@
+stage: S4-D2-R5-G2-D10
+purpose: cached_episode_clipping_association_and_controlled_projection_jacobian
+runtime: {device: cuda, automatic_retry: false}
+d9_config: configs/experiments/s4_r5_g2_d9_action_penalty_development_v1.yaml
+d9_config_sha256: 8586fc54f059429b3563a11a884e92294a4df3162b14ea96dfc2418daf65b553
+d9_entry_sha256: 0170da10cdc3e24ef783fbab5f3e41e565ce178a7b0fba36f4d9916aa5e7d73e
+d9_output: outputs/s4_r5_g2_d9_action_penalty_development_v1
+d9_hashes:
+  summary.json: a68b178f58f438c0336ede47945876879062cc89085ddc4b06edd4bd110add22
+  records.jsonl: 0d0b28356ca10afbc8831565e89bef14f1767a25589a98e0b47ef31c04e2d9af
+  progress.jsonl: 2de2389ffadb34643d4b8f5287b1f5622dcaad43d224c77248b84c0e6ce9c92c
+  stream_manifest.json: 36ba154d4698ab44a9e39cea4cd1a29b4f47ae8b748fd3dfdc684b1599ffd3a6
+  SUCCESS.json: c073d8244e22fbc4e768e8eebb68a2ae745e33ba4fc336e307937ed6cd829c8e
+  config.json: ba36c75f1aec2eff173d0122434205ccef87f32f842a6b0aa83ed912a8938837
+  preflight.json: d4f8492362468b0f86b2d69dbc71da1aeb911e16045b3ec12b31d47f37a88874
+  runtime.json: ac9cebb5d511cdb779b60cd63783df9c6fe9127e042311425e3321448459939f
+analysis:
+  association_x: new_normalized_clipping_fraction
+  association_y: new_minus_old_absolute_power
+  center_within: member_family_slot_across_weather
+  bootstrap_unit: complete_weather_shared_across_all_cells
+  bootstrap_seed: 7543456
+  bootstrap_repeats: 5000
+  descriptive_interval: 0.95
+  group_table: all_family_slot_cells_without_selection
+output_directory: outputs/s4_r5_g2_d10_clipping_association_v1
+boundary: {new_physical_transitions: 0, model_forward_calls: 0, training_updates: 0, confirmation_access: false, real_slm_actions: false, causal_performance_claim: false, gate_reclassification: false}

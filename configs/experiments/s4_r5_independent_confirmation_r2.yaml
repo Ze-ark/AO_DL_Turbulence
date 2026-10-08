@@ -1,0 +1,24 @@
+stage: S4-D2-R5-3-R2
+purpose: one_time_independent_confirmation_of_frozen_global_scale
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+source_bundle_sha256: ccdc31faaa155361d8bd3e19ffc5bb82705f425a0ef4c7f58dd7f70831efd956
+parent: configs/experiments/s4_r5_policy_training_v1.yaml
+parent_sha256: 3f8f2cd5a8ffacd08e91f1606889f97a94b175b574180a725a0f706d2e08498e
+training_output: outputs/s4_r5_policy_training_v4
+training_summary_sha256: 2bcd9a87290cd7d37eeaafcee5c7f2b08f5a42ec58fe88d4e5e0fc99ac8efa5d
+checkpoints:
+  policy_0_02000.pt: 236f4ee3b83885181555b064e37391cb9fc8b93c260bcd076effa753620c78d0
+  policy_1_02000.pt: 653600beb3829ec62ac901d2447322fc4dafaf25e32dafde8f51fe65e9a3929c
+  policy_2_02000.pt: 2b4589eb6fdc93f6dd042f65b632b982f96bfb3042db98280d97ab8a9249ca49
+development_output: outputs/s4_r5_margin_development_v1
+development_hashes:
+  summary.json: 92e1c1cd0c8a6a44ee1ffb3560afaf2ede276148e5cfffde9ee090a9bb3bb906
+  records.jsonl: 71c0d879d731849bb314f478971443127006c63dd13166ad3c29bf18050a986e
+selected_scale: 1.25
+data: {seed_base: 5700000, seed_stride: 10, weather_count: 32, episode_length: 200}
+quick: {seed_base: 5710000, weather_count: 1, episode_length: 16, profile_ids: [nominal, combined_moderate]}
+statistics: {bootstrap_seed: 5723456, bootstrap_repeats: 20000}
+thresholds: {relative_power_gain: 0.01, maximum_safety_increase: 0.001}
+output_directory: outputs/s4_r5_independent_confirmation_r2_v1
+quick_directory: outputs/s4_r5_independent_confirmation_r2_v1_quick
+boundary: {training_updates: 0, real_slm_actions: false, automatic_retry: false, old_confirmation_access: false}

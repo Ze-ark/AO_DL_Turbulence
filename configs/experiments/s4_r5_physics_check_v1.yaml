@@ -1,0 +1,28 @@
+stage: S4-D2-R5-0
+design_only: false
+purpose: physics_gradient_diagnostic_not_policy_training
+runtime: {device: cuda, require_cuda: true}
+design: configs/experiments/s4_r5_physics_policy_design_v1.yaml
+physical_source: configs/experiments/s4_r4_dynamics_v1.yaml
+outputs:
+  formal: outputs/s4_r5_physics_check_v1
+  quick: outputs/s4_r5_physics_check_v1_quick
+formal: {seed_base: 5200000, family_indices: [0, 1, 2], weather_per_family: 4, steps: 200, gradient_directions: 4}
+quick: {seed_base: 5280000, family_indices: [0], weather_per_family: 1, steps: 16, gradient_directions: 1}
+quick_profile_ids: [nominal, combined_moderate]
+anchor: {gain: 0.15, leak: 0.10, tracking_gain: 0.0}
+direction_scales: [0.10, 0.25, 0.50]
+primary_scale: 0.25
+forward_atol: 0.000001
+gradient_steps: 16
+finite_difference_epsilon: 0.00001
+gradient_atol: 0.00001
+gradient_rtol: 0.001
+gradient_zero_threshold: 0.000000000001
+action_weight: 0.01
+smooth_weight: 0.001
+# 诊断方向安全筛选：主尺度每个成对场景均不超过原允许增量。
+safety_increase_maximum: 0.001
+# 防卡死上限，不是预计运行时长；达到上限保留现场且不自动重试。
+timeout_seconds: 14400
+boundary: {training_updates: 0, real_slm_actions: false, confirmation_access: false, scientific_ranking: false, automatic_retry: false}

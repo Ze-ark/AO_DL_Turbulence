@@ -1,0 +1,27 @@
+# 仅为已知答案的人工单元验证；不是相机/SLM 标定或算法性能实验。
+schema: observation_bridge_o1_v1
+scope: deterministic_synthetic_unit_verification
+device: cpu
+seed: 831001
+grid_size: 64
+pupil_radius_fraction: 0.4
+num_modes: 21
+coefficient_tolerance_rad: 1.0e-5
+# r1 仅为模块目录隔离后的新技术记录；不覆盖首次记录，不改变算法/参数。
+output_directory: outputs/observation_bridge_o1_v1_r1
+contract:
+  source_kind: synthetic_known_pupil
+  measurement_plane: frozen_simulation_pupil
+  phase_unit: rad
+  reference: joint_constant_and_frozen_modes
+  spatial_sampling_verified: true
+  orientation:
+    transpose: false
+    flip_y: false
+    flip_x: false
+    phase_sign: 1
+tolerances:
+  min_relative_intensity: 1.0e-4
+  max_neighbor_jump_rad: 1.5
+  loop_consistency_rad: 1.0e-5
+  max_fit_rmse_rad: 1.0e-5

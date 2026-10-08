@@ -1,0 +1,15 @@
+stage: S4-D2-R4-1B2-CLOSED-LOOP-RANKING
+upstream: outputs/s4_r4_amplitude_closed_loop_recovery_v2
+upstream_sha256: 52f623b67df24496d36e840399843e484a707d34cbd84c0cf291406cf583db9c
+parent: configs/experiments/s4_r4_dynamics_v1.yaml
+output_directory: outputs/s4_r4_closed_loop_ranking_v3
+probe_steps: [8, 40, 100, 180]
+candidate_order: [zero, negative, half, selected, scaled_1p5]
+horizon: 8
+search_seed: 3769600
+bootstrap_seed: 3769703
+bootstrap_repeats: 20000
+physical_transitions: 195840
+model_forward_samples: 28588032
+training_updates: 0
+automatic_retry: false

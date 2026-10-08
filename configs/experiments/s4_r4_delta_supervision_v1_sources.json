@@ -1,0 +1,9 @@
+{
+  "src/rl/r4_delta_learning.py": "27116776f04967d482aa3e8834dc7df07a11fae7507275738b5ead25a29bf5eb",
+  "src/rl/r4_delta_experiment.py": "df1a7da2c5e694f4bdaea844beeb4e62555bde8e78cec70eb3f0e66e50574832",
+  "scripts/train_s4_r4_delta_supervision.py": "fdd56a740913cba8dd951578c06afb0b521313470b86f84d015521d3cf5904f0",
+  "tests/test_r4_delta_learning.py": "59dfeadbaff9d0b6328d5ff0528d2afd3e605703631874e32c515dbdca8f673b",
+  "configs/experiments/s4_r4_delta_supervision_v1.yaml": "6acec2e67ae10c586c5a59bac738e73bff1e77f6b8dfd7d2394f18a56dbb824b",
+  "configs/experiments/s4_r4_delta_supervision_design_v1.yaml": "e585a5b982a10d09abdf3262161f34ae5141d30d0f1a5b23b9d0b550b8922664",
+  "docs/S4-D2-R4-1B1-R1动作差值监督增补设计.md": "02a80fb3a4380a275abd37998c0a328b8a1e1d2c8fcd7a82a434b1b8c73a207c"
+}

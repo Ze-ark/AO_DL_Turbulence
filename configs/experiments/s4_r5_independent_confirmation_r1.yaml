@@ -1,0 +1,18 @@
+stage: S4-D2-R5-3-R1
+purpose: corrected_independent_confirmation_of_frozen_r5_residual_policy
+design_only: false
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+parent: configs/experiments/s4_r5_policy_training_v1.yaml
+training_output: outputs/s4_r5_policy_training_v4
+checkpoint_initializations: [0, 1, 2]
+checkpoint_update: 2000
+families:
+  - {id: frozen, regime: frozen_stationary, wind_speed_mps: 0.45, wind_direction_deg: 15.0, slm_delay_frames: 2}
+  - {id: boiling, regime: boiling_stationary_wind, wind_speed_mps: 0.55, wind_direction_deg: 60.0, frozen_flow_rho: 0.995, slm_delay_frames: 2}
+  - {id: varying, regime: boiling_varying_wind_noisy, wind_speed_mps: 0.60, wind_direction_deg: 75.0, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 135.0, slm_delay_frames: 2}
+profile_ids: [nominal, delay_3, settling_050, registration_moderate, registration_severe, combined_moderate]
+data: {seed_base: 5600000, weather_per_family: 32, episode_length: 200, sensor_seed_offset: 50000000, power_seed_offset: 60000000, family_offsets: [0, 4096, 8192]}
+quick: {weather_per_family: 1, episode_length: 16, profile_ids: [nominal, combined_moderate]}
+statistics: {bootstrap_seed: 5612345, bootstrap_repeats: 20000}
+output_directory: outputs/s4_r5_independent_confirmation_r1_v1
+quick_directory: outputs/s4_r5_independent_confirmation_r1_v1_quick

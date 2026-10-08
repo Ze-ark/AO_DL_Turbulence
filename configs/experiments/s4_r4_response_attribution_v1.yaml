@@ -1,0 +1,13 @@
+stage: S4-D2-R4-1B1-D1
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+input_directory: outputs/s4_r4_action_response_v1
+input_summary_sha256: b6ab2345f2b85573151eedd1c5cab8863bead9da6fcf0025201b64f7ca3f4842
+model_directory: outputs/s4_r4_dynamics_v1
+parent_config: configs/experiments/s4_r4_dynamics_v1.yaml
+output_directory: outputs/s4_r4_response_attribution_v1
+quick_directory: outputs/s4_r4_response_attribution_v1_quick
+arms: [full_self, current_self, full_recorded_commands_privileged]
+horizon: 8
+statistics: {bootstrap_seed: 3759100, bootstrap_replicates: 20000, paired_ci_quantiles: [0.0125, 0.9875]}
+quick: {family: frozen, profile: nominal, base_seed: 3762048, modes: [0, 10], bootstrap_replicates: 100}
+boundary: {new_physical_transitions: 0, model_updates: 0, rl_updates: 0, mpc_evaluation: false, confirmation_access: false, real_slm_actions: false, s4d3_access: false}

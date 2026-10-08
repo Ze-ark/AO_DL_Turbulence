@@ -1,0 +1,92 @@
+# A10设计清单：仅供实现读取，当前不可直接运行。
+stage: S4-D2-R3-D2-A10
+status: DESIGN_READY_IMPLEMENTATION_PENDING
+design_only: true
+runnable: false
+entry_point: null
+
+upstream:
+  summary: outputs/s4_r3_h16_fixed_time_confirmation_v1/summary.json
+  summary_sha256: 833b55a010e36ddfb6cd3aac53ae9ec7f947e073cceac3cefe390a4bac9e93a4
+  success: outputs/s4_r3_h16_fixed_time_confirmation_v1/SUCCESS.json
+  required_status: FIXED_TIME_GENERALIZATION_DEGRADATION_NOT_CONFIRMED
+  training_freeze: outputs/s4_r3_h16_fixed_time_confirmation_v1/TRAINING_FROZEN.json
+  checkpoint_inventory: outputs/s4_r3_h16_fixed_time_confirmation_v1/checkpoint_inventory.csv
+  selected_arm: regression_only
+  policy_seeds: [9301, 9302, 9303]
+  replicate_indices: [0, 1, 2]
+  checkpoint_role: selected
+
+gate:
+  prediction_aggregation: arithmetic_mean_in_original_reward_units
+  actor_release_rule: mean_predicted_h16_reward_delta_greater_than_zero
+  threshold: 0.0
+  fallback_action: zero_residual
+  candidate_actions: [zero, frozen_actor]
+  trainable_parameters: 0
+
+data:
+  namespace_base: 3781000
+  require_full_historical_namespace_scan: true
+  forbid_seed_at_or_above: 4000000
+  splits:
+    - {id: confirmation_id, condition_template: development, seed_offset: 0, episodes_per_condition: 32}
+    - {id: confirmation_shift, condition_template: validation, seed_offset: 1024, episodes_per_condition: 32}
+  condition_seed_offsets: [0, 256, 512]
+  profile_ids: [nominal, delay_3, settling_050, registration_moderate, registration_severe, combined_moderate]
+  probe_steps: [0, 80, 160]
+  episode_length_steps: 200
+  target_horizon: 16
+  unique_weather_episodes: 192
+  policy_episode_instances: 576
+  paired_action_samples: 10368
+
+statistics:
+  primary_split: confirmation_id
+  comparisons_per_policy:
+    - gate_reward_vs_zero
+    - gate_power_vs_zero
+    - gate_reward_vs_always_actor
+  family_size: 9
+  familywise_alpha: 0.05
+  bootstrap_replicates: 20000
+  bootstrap_unit: complete_episode_seed
+  stratified_by: condition_family
+  minimum_supporting_policy_seeds: 2
+  require_each_condition_nonnegative_reward_and_power: true
+  pass_status: VETO_GATE_INDEPENDENT_CONFIRMATION_PASS
+  fail_status: VETO_GATE_INDEPENDENT_CONFIRMATION_FAIL
+
+runtime:
+  device: cuda
+  require_cuda: true
+  deterministic_algorithms: true
+  formal_owner: user_ide
+  automatic_retry: false
+  output_collision: fail
+
+quick_design:
+  namespace_base: 3787000
+  split_seed_offsets: [0, 512]
+  condition_seed_offsets: [0, 64, 128]
+  episodes_per_condition: 2
+  policy_seeds: [9301]
+  profile_ids: [nominal, combined_moderate]
+  probe_steps: [0, 4]
+  bootstrap_replicates: 100
+  scientific_interpretation: QUICK_SMOKE_ONLY
+
+proposed_output:
+  directory: outputs/s4_r3_h16_veto_gate_confirmation_v1
+  quick_directory: outputs/s4_r3_h16_veto_gate_confirmation_v1_quick
+
+boundary:
+  supervised_updates: 0
+  actor_updates: 0
+  critic_updates: 0
+  alpha_updates: 0
+  student_updates: 0
+  full_rl_trained: false
+  closed_loop_rollout: false
+  s4d3_accessed: false
+  real_slm_actions: false

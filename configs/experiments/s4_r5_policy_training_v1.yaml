@@ -1,0 +1,40 @@
+stage: S4-D2-R5-2
+purpose: full_episode_physics_gradient_residual_policy_training
+design_only: false
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+r5_0_summary: outputs/s4_r5_physics_check_v1/summary.json
+r5_0_summary_sha256: 168a8653dc6b47f2797086716903acf5790c0aae1bdb56ba50d36dbb836f6d36
+r5_1_summary: outputs/s4_r5_baseline_selection_v1/summary.json
+r5_1_summary_sha256: e97f26298dcafed426e8fc9689d5e538fdf8db06c1cfd54cfdfeb0157560dc92
+r5_1_selection: outputs/s4_r5_baseline_selection_v1/selection.json
+parent: configs/experiments/s4_r4_dynamics_v1.yaml
+environment_config: configs/environment/s1_taylor_v1.yaml
+hardware_profile_source: configs/experiments/s4_hardware_stress_v1.yaml
+profile_ids: [nominal, delay_3, settling_050, registration_moderate, registration_severe, combined_moderate]
+families:
+  - {id: frozen, regime: frozen_stationary, wind_speed_mps: 0.45, wind_direction_deg: 15.0, slm_delay_frames: 2}
+  - {id: boiling, regime: boiling_stationary_wind, wind_speed_mps: 0.55, wind_direction_deg: 60.0, frozen_flow_rho: 0.995, slm_delay_frames: 2}
+  - {id: varying, regime: boiling_varying_wind_noisy, wind_speed_mps: 0.60, wind_direction_deg: 75.0, frozen_flow_rho: 0.995, wind_speed_modulation_fraction: 0.15, wind_direction_modulation_deg: 15.0, wind_modulation_period_frames: 80, wind_modulation_phase_deg: 135.0, slm_delay_frames: 2}
+data:
+  train_seed_base: 5500000
+  family_offsets: [0, 4096, 8192]
+  episodes_per_family: 256
+  episode_length: 200
+  logical_batch_episodes: 18
+  sensor_seed_offset: 50000000
+policy: {input_size: 79, history_frames: 8, hidden_size: 64, output_size: 11, correction_limit: 1.0, zero_output_initialization: true}
+objective: {action_weight: 0.01, smooth_weight: 0.001, discount: 1.0}
+training:
+  initializations: 3
+  updates_per_initialization: 2000
+  learning_rate: 0.0001
+  gradient_norm_limit: 1.0
+  checkpoint_interval_updates: 100
+  gradient_checkpointing: false
+  micro_batch_episodes: 1
+performance: {deterministic: true, cudnn_enabled: true, cudnn_benchmark: false, allow_tf32: false}
+quick: {episodes_per_family: 1, episode_length: 16, logical_batch_episodes: 2, updates_per_initialization: 2, initializations: 1}
+boundary: {confirmation_access: false, real_slm_actions: false, s4d3_access: false, automatic_retry: false, policy_leakage_verified: false}
+output_directory: outputs/s4_r5_policy_training_v4
+quick_directory: outputs/s4_r5_policy_training_v4_quick
+

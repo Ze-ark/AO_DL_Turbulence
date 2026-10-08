@@ -1,0 +1,33 @@
+stage: S4-D2-R4-1C
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+parent: configs/experiments/s4_r4_dynamics_v1.yaml
+output_directory: outputs/s4_r4_closed_loop_repair_v1
+upstream: outputs/s4_r4_candidate_full_closed_loop_v1
+upstream_sha256: c3499c4f44251da7c5bf51fee0fb52d6e00a19ad8287e6657279d5ab133b324f
+data:
+  train_starts: [3792000, 3792256, 3792512]
+  development_starts: [3794000, 3794256, 3794512]
+  reserved_confirmation_starts: [3796000, 3796256, 3796512]
+  per_family: 32
+  batch: 16
+  steps: 200
+  quick_train_start: 3798000
+  quick_development_start: 3798064
+  quick_evaluation_start: 3798128
+training:
+  arms: [old_data, mixed_data]
+  updates: 2000
+  trajectory_batch: 64
+  pair_batch: 16
+  learning_rate: 0.0001
+  gradient_clip: 1.0
+  interval: 500
+  primary_checkpoint: final_only
+  evaluation_starts: [0, 40, 80, 120, 160]
+  pair_loss: absolute_plus_delta
+  mixed_new_fraction: 0.5
+search_seed: 3798800
+bootstrap_seed: 3798900
+bootstrap_repeats: 20000
+quick: {per_family: 2, steps: 12, updates: 2, trajectory_batch: 4, pair_batch: 2, interval: 1, evaluation_starts: [0, 4]}
+boundary: {rl_updates: 0, real_slm_actions: false, confirmation_access: false, automatic_retry: false}

@@ -1,0 +1,101 @@
+metadata:
+  stage: S4-D2-R3-D2-A3
+  experiment_id: AO-S4-D2-R3-D2-A3-PAIRWISE-RANK-LEARNABILITY
+  version_label: s4d2_r3_d2a3_pairwise_rank_learnability_v1
+  purpose: diagnose_whether_direct_pairwise_supervision_recovers_action_ranking
+  diagnostic_only: true
+  allow_full_rl_training: false
+  allow_original_critic_updates: false
+  allow_actor_updates: false
+  allow_alpha_updates: false
+  allow_student_updates: false
+  allow_mechanism_audit_access: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+design_contract:
+  audit_record: docs/S4-D2-R3-D2-A多步评论家修复审计记录.md
+  audit_record_sha256: d8cc1f2efee05ca6b6e5aeba0ee1998bc1dec2fab51a03ae615599d33a675bf5
+  plan: docs/S4-D2-R3-D2-A3动作排序可学习性诊断计划.md
+  plan_sha256: fc1c41135130fa83adfbf555ce39babc1d0a831ded5e2fe3e064c1e3ba373c45
+
+upstream_r3d2a:
+  summary: outputs/s4_r3_multistep_critic_repair_v1/summary.json
+  summary_sha256: 0c6fa714719bbc38b738cb7238479eb077f2d320bf037045fb5d3d58da0c49ac
+  preflight: outputs/s4_r3_multistep_critic_repair_v1/preflight.json
+  preflight_sha256: 7c5a294390c24766483c5849abab19eeacf2ac9a62302cff4e5055c48d2228ac
+  effective_config: outputs/s4_r3_multistep_critic_repair_v1/effective_config.json
+  effective_config_sha256: ac43c634932849f1ed06306307921713a0e39fecc355f5d0048ef983923418f8
+  source_manifest: outputs/s4_r3_multistep_critic_repair_v1/source_manifest.json
+  source_manifest_sha256: 43dcd143b1644d4c08fdc475e3956e1001d67a8489b715272800278a643841b0
+  fit_summary: outputs/s4_r3_multistep_critic_repair_v1/fit_summary.csv
+  fit_summary_sha256: f84324bd5722295c4c5e990d0b8e85b5fc32ae5610d7f4854928fbd619f213ec
+  required_status: NO_CRITIC_REPAIR_PASSED
+
+data:
+  policy_seeds: [9301, 9302, 9303]
+  target_horizon_index: 31
+  state_size: 210
+  action_size: 11
+  expected_development_samples_per_seed: 3456
+  expected_validation_samples_per_seed: 1728
+  expected_development_pairs_per_seed: 1728
+  expected_validation_pairs_per_seed: 864
+  development:
+    9301: {path: outputs/s4_r3_multistep_critic_repair_v1/datasets/seed_9301_development.pt, sha256: dfc7439c8aee8b575bb89f79ed13964c7428632f17610a616742bf0c841ae41f}
+    9302: {path: outputs/s4_r3_multistep_critic_repair_v1/datasets/seed_9302_development.pt, sha256: 529f4932d437babe96bfdabe0f04abea335a5c86bf6da957a43aeb0c7d7fa573}
+    9303: {path: outputs/s4_r3_multistep_critic_repair_v1/datasets/seed_9303_development.pt, sha256: d77d44591c1c6d100e2b4e4634960a4f1d00602600ffcdca92a51f6724776378}
+  validation:
+    9301: {path: outputs/s4_r3_multistep_critic_repair_v1/datasets/seed_9301_validation.pt, sha256: a87ae10f87875cb971749a3f86e9fcec68f118bad59624389208ab8682fd6817}
+    9302: {path: outputs/s4_r3_multistep_critic_repair_v1/datasets/seed_9302_validation.pt, sha256: a77509dc33d4a678b00e66e22ee76a2ef192f34b0e2080ed9b253f8b2a01882a}
+    9303: {path: outputs/s4_r3_multistep_critic_repair_v1/datasets/seed_9303_validation.pt, sha256: 973f455f3026c8d64a2401bdd45a04aafc979b9917d65d241ab555ee3bb7335c}
+
+objectives:
+  - {id: paired_delta_regression, balanced_sign_weight: 0.0}
+  - {id: paired_delta_plus_balanced_sign, balanced_sign_weight: 0.25}
+
+probe_training:
+  hidden_size: 256
+  learning_rate: 0.0003
+  batch_size: 256
+  maximum_updates: 10000
+  validation_interval_updates: 100
+  log_interval_updates: 100
+  early_stopping_patience_updates: 1500
+  huber_delta: 1.0
+  initialization_seed_offset: 510000
+  batch_order_seed_offset: 520000
+  target_scale_floor: 0.000001
+  feature_scale_floor: 0.000001
+
+statistics:
+  cluster_bootstrap_replicates: 2000
+  cluster_bootstrap_seed_offset: 530000
+  confidence_level: 0.95
+
+gate:
+  minimum_balanced_accuracy: 0.60
+  minimum_balanced_accuracy_ci_low: 0.50
+  minimum_matthews_correlation: 0.20
+  require_mae_better_than_constant: true
+  allow_full_rl_authorization: false
+
+runtime:
+  device: cuda
+  require_cuda: true
+  deterministic_algorithms: true
+
+outputs:
+  directory: outputs/s4_r3_pairwise_rank_learnability_v1
+  quick_directory: outputs/s4_r3_pairwise_rank_learnability_v1_quick_v2
+
+quick:
+  policy_seeds: [9301]
+  maximum_development_pairs: 64
+  maximum_validation_pairs: 64
+  maximum_updates: 8
+  validation_interval_updates: 4
+  log_interval_updates: 4
+  early_stopping_patience_updates: 8
+  batch_size: 32
+  cluster_bootstrap_replicates: 50

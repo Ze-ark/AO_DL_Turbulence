@@ -1,0 +1,40 @@
+stage: S4-D2-R4-1B1
+purpose: frozen_model_action_direction_diagnostic
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+upstream_directory: outputs/s4_r4_dynamics_v1
+upstream_summary_sha256: ee91f19e72fda020a9cff5eca5541a6918880f44b84d1e16abd09d5089450b90
+upstream_config: configs/experiments/s4_r4_dynamics_v1.yaml
+output_directory: outputs/s4_r4_action_response_v1
+quick_directory: outputs/s4_r4_action_response_v1_quick
+calibration_train_per_family: 16
+development_per_family: 32
+batch_episodes: 16
+probe_steps: [0, 80, 160]
+high_mode_indices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+horizon: 8
+target: mean_measured_power_over_8_steps
+continuation: causal_collector_anchor_zero_correction
+primary_predictor: mean_three_gru_members
+noise:
+  repeats: 2
+  independent_measurement_seed_offset: 80000000
+  threshold_std_multiplier: 3.0
+  numerical_floor: 0.0000001
+  scope: per_hardware_profile_training_only
+statistics:
+  bootstrap_seed: 3759000
+  bootstrap_replicates: 20000
+  bootstrap_unit: weather_episode_stratified_family
+  balanced_accuracy_min: 0.60
+  ci95_lower_exclusive: 0.50
+  min_identifiable_weather: 50
+  predicted_zero_counts_as_incorrect: true
+quick:
+  namespace_seed: 3750000
+  development_offset: 2048
+  family_offsets: [0, 256, 512]
+  per_family: 2
+  probe_steps: [4]
+  high_mode_indices: [0, 10]
+  bootstrap_replicates: 100
+boundary: {model_updates: 0, rl_updates: 0, mpc_evaluation: false, confirmation_access: false, real_slm_actions: false, s4d3_access: false}

@@ -1,0 +1,7 @@
+{
+  "src/rl/r4_baseline_selection.py": "7798f585774a37fee7a8adc12024a2a58b892a25a1b58b7b267483c81e69108e",
+  "scripts/select_s4_r4_baseline.py": "1c49e86f1ab560b014bfe826cf2af8d8476d57dd3356f3d3dc3e2620b6fab9f4",
+  "configs/experiments/s4_r4_baseline_selection_v1.yaml": "060aeced392a04b189e46536d2aa1348960db0040a42929c27ade83beaf5e9b4",
+  "tests/test_r4_baseline_selection.py": "82dbb2d8ff34fbc5bf965a72eac10f6bc498e87da8190dbc0b94326c59fc7ce8",
+  "docs/S4-D2-R4-1B2传统基线与安全冒烟记录.md": "5d483135d85dad3b34a644cfd44128fcdc6ac7db8f8f7348210a86647d9b006a"
+}

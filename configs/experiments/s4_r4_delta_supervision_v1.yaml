@@ -1,0 +1,12 @@
+stage: S4-D2-R4-1B1-R1
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+budget_approval: {date: '2026-09-09', user_reply: 继续, scope: implementation_and_user_owned_formal_run}
+design: configs/experiments/s4_r4_delta_supervision_design_v1.yaml
+output_directory: outputs/s4_r4_delta_supervision_v1
+quick_directory: outputs/s4_r4_delta_supervision_v1_quick
+upstream: outputs/s4_r4_response_attribution_v1
+upstream_summary_sha256: 334bc2da8e685dbd38c8e5f011c81727b50e819e1dec6852110e27cb837c453f
+quick_development: outputs/s4_r4_action_response_v1_quick
+quick_development_summary_sha256: 7002628ee9288b2dd76641b9a32d416d330074021da61c331562ef8a15dfacd3
+bootstrap_seed: 3769200
+quick: {per_family: 2, profiles: [nominal], probe_steps: [0, 4], modes: [0, 10], updates: 2, trajectory_batch: 2, pair_batch: 2, evaluation_interval: 2, bootstrap_replicates: 100}

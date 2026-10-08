@@ -1,0 +1,7 @@
+{
+  "src/rl/r4_amplitude_closed_loop.py": "bdc0b3cfb2b326818ef804486f347740eac594687c6aa3d075e214090cc09715",
+  "scripts/run_s4_r4_amplitude_closed_loop.py": "dfc1bb096901357196d9c3fcd4400db3dc94221e60f52cce1c85d213f498e6d5",
+  "configs/experiments/s4_r4_amplitude_closed_loop_v1.yaml": "9d9670b70a46b879ea52cc846cf73c1823ab1f103e17186b135aed613f3f3042",
+  "tests/test_r4_amplitude_closed_loop.py": "1bd941ceaa8c761f07aea191ac917c34c6331697b6868d15c5598a29ee438556",
+  "docs/S4-D2-R4-1B2持续力度闭环对照.md": "f4b47e5419c82c4bbd10f96a1ce47ec9b60c4cd42780057bd181f952285d246c"
+}

@@ -1,0 +1,13 @@
+stage: S4-D2-R5-G2-D4
+purpose: frozen_policy_same_state_action_and_delayed_power_diagnostic
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+g2_d3_config: configs/experiments/s4_r5_g2_d3_matched_development_v1.yaml
+g2_d3_config_sha256: 635874d1a6c698275375ee41c30fbb389daf2ca8aa207230ba8c1ac9087f96d7
+controllers: [train_scale_1, train_scale_1_75]
+deployment_scale: 1.75
+source_state: frozen_integrator_prefix
+data: {seed_base: 7300000, seed_stride: 10, weather_count: 4, episode_length: 200, probe_steps: [0, 25, 75, 150], hold_steps: 5}
+quick: {seed_base: 7310000, weather_count: 1, episode_length: 16, probe_steps: [0, 5], hold_steps: 5}
+output_directory: outputs/s4_r5_g2_d4_same_state_v1
+quick_directory: outputs/s4_r5_g2_d4_same_state_v1_quick_r1
+boundary: {confirmation_access: false, training_updates: 0, real_slm_actions: false, automatic_retry: false, historical_results_read_only: true, independent_confirmation: false}

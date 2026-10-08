@@ -1,0 +1,18 @@
+stage: S4-D2-R4-1B2-CLOSED-LOOP
+device: cuda
+parent: configs/experiments/s4_r4_dynamics_v1.yaml
+upstream: outputs/s4_r4_selected_smoke_v1
+upstream_sha256: 48ef295153aeb4fb23b2581d04ace6ef0cdbbd458c817fe937a0d17866a5b957
+output_directory: outputs/s4_r4_closed_loop_v1
+controllers: [integrator, linear_mpc, gru_mpc]
+development_starts: [3762048, 3762304, 3762560]
+per_family: 32
+batch_size: 16
+steps: 200
+search_seed: 3769600
+bootstrap_seed: 3769700
+bootstrap_repeats: 20000
+physical_transitions: 345600
+max_model_forward_samples: 2831155200
+training_updates: 0
+automatic_retry: false

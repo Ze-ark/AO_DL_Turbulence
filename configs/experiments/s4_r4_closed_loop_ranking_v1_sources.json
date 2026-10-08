@@ -1,0 +1,7 @@
+{
+  "src/rl/r4_closed_loop_ranking.py": "77505eeb15507fa34512fb61971c93adc7d64ca558299830acbf45b337d5ea24",
+  "scripts/diagnose_s4_r4_closed_loop_ranking.py": "341cdd4554e055cb0efd6e8c3d5f1e66c074dd485ba9781e309b2e794d25c3e5",
+  "configs/experiments/s4_r4_closed_loop_ranking_v1.yaml": "36d39adcff18b16a55ace72d04e4a4a7746ce05582d4e0af3592ab7b00841280",
+  "tests/test_r4_closed_loop_ranking.py": "75fd3b84d780ee24be730b4427a54965980bf539aaefb0eab16812c35c82903f",
+  "docs/S4-D2-R4-1B2闭环动作排序诊断.md": "30743415f6b1601e86668930ccc9f76b98aecd282189d191cc1f14a3c3aaf0e3"
+}

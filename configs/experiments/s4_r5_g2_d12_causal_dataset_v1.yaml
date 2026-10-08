@@ -1,0 +1,9 @@
+stage: S4-D2-R5-G2-D12-A
+purpose: causal_input_pairing_with_frozen_d11_candidate_labels
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+source_config: configs/experiments/s4_r5_g2_d11_same_state_r1.yaml
+input_fields: [history, valid, command]
+split: {unit: complete_weather, folds: 4, held_out_weather_per_fold: 2}
+output_directory: outputs/s4_r5_g2_d12_causal_dataset_v1
+quick_directory: outputs/s4_r5_g2_d12_causal_dataset_v1_quick
+boundary: {training_updates: 0, confirmation_access: false, real_slm_actions: false, candidate_resimulation: false, automatic_retry: false, independent_confirmation: false, gate_reclassification: false}

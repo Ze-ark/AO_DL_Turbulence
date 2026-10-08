@@ -1,0 +1,193 @@
+# A9设计清单；不是运行配置，不可传给旧训练入口。
+metadata:
+  stage: S4-D2-R3-D2-A9
+  experiment_id: AO-S4-D2-R3-D2-A9-FIXED-TIME-CONFIRMATION
+  version_label: s4d2_r3_d2a9_fixed_time_design_v1
+  status: DESIGN_READY_IMPLEMENTATION_PENDING
+  verification_status: UNVERIFIED
+  design_only: true
+  runnable: false
+  training_entrypoint: null
+
+documents:
+  plan: docs/S4-D2-R3-D2-A9固定时点与单任务对照实验设计.md
+  upstream_audit: docs/S4-D2-R3-D2-A8-D3最佳与末次模型对照诊断审计记录.md
+  preparation_record: docs/S4-D2-R3-D2-A9设计检查记录.md
+
+upstream:
+  summary: outputs/s4_r3_h16_checkpoint_endpoints_v1/summary.json
+  summary_sha256: 71fce42ca80dc0058460a3e8d8d6074a1502ae2459c1dfedd5382c82c6eea7e6
+  required_status: CHECKPOINT_SENSITIVE_GAP_CANDIDATE
+  collection_config: configs/experiments/s4_r3_multistep_critic_repair_v1.yaml
+  head_config: configs/experiments/s4_r3_h16_head_split_v1.yaml
+  gradient_config: configs/experiments/s4_r3_h16_gradient_conflict_v1.yaml
+
+model:
+  feature_size: 221
+  state_size: 210
+  action_size: 11
+  hidden_sizes: [256, 256]
+  activation: silu
+  target_horizon: 16
+  target_source: empirical_reward_returns
+  sign_threshold: 0.0
+  arms:
+    - {id: shared, outputs: shared_scalar, regression_weight: 1.0, classification_weight: 0.25}
+    - {id: split, outputs: separate_heads, regression_weight: 1.0, classification_weight: 0.25}
+    - {id: regression_only, outputs: reward_scalar, regression_weight: 1.0, classification_weight: 0.0}
+    - {id: classification_only, outputs: classification_score, regression_weight: 0.0, classification_weight: 0.25}
+  paired_initialization: true
+  split_classification_head_copies_reward_head: true
+  normalization_from_training_only: true
+  feature_scale_floor: 0.000001
+  target_scale_floor: 0.000001
+
+training_design:
+  policy_seeds: [9301, 9302, 9303]
+  replicate_indices: [0, 1, 2]
+  initialization_seed_offset: 610000
+  batch_order_seed_offset: 710000
+  replicate_seed_stride: 1000
+  optimizer: adam
+  learning_rate: 0.0003
+  batch_size: 256
+  maximum_updates: 10000
+  early_stopping: false
+  learning_rate_scheduler: null
+  huber_delta: 1.0
+  fixed_checkpoint_updates: [0, 200, 500, 1000, 2000, 4000, 7000, 10000]
+  primary_early_update: 1000
+  primary_late_update: 10000
+  log_interval_updates: 100
+  selection_interval_updates: 100
+  selection_includes_update_zero: false
+  selection_tie_break: earliest_update
+  selection_rules:
+    shared: ranking_ba_then_value_mae
+    split: ranking_ba_then_value_mae
+    regression_only: value_mae
+    classification_only: ranking_ba
+  paired_batch_indices: true
+  planned_fits: 36
+
+data_design:
+  split_unit: complete_turbulence_episode
+  pairs_per_episode: 18
+  episode_length_steps: 200
+  profile_ids: [nominal, delay_3, settling_050, registration_moderate, registration_severe, combined_moderate]
+  probe_steps: [0, 80, 160]
+  condition_family_order: [frozen, boiling, combined]
+  condition_seed_offsets: [0, 256, 512]
+  namespace_base: 3991000
+  reserved_s4d3_seed_base: 4000000
+  same_weather_seeds_across_policies: true
+  reuse_data_across_arms_and_initializations: true
+  old_samples_allowed: false
+  old_metadata_allowed_for_separation_check: true
+  verify_old_namespace_intersection_before_run: true
+  splits:
+    - {id: training, seed_offset: 0, episodes_per_condition: 128, condition_template: development, available_before_training_freeze: true}
+    - {id: selection, seed_offset: 1024, episodes_per_condition: 16, condition_template: development, available_before_training_freeze: true}
+    - {id: confirmation_id, seed_offset: 2048, episodes_per_condition: 32, condition_template: development, available_before_training_freeze: false}
+    - {id: confirmation_shift, seed_offset: 3072, episodes_per_condition: 32, condition_template: validation, available_before_training_freeze: false}
+  confirmation_after_all_models_frozen: true
+  same_condition_comparison_ignores_only: [id, base_seed]
+  unique_weather_episodes: 624
+  policy_episode_instances: 1872
+  total_action_pairs: 33696
+
+statistics_design:
+  primary_split: confirmation_id
+  primary_metrics:
+    - {id: shared_mae_deterioration, expression: D_shared, meaningful_change: 0.05}
+    - {id: split_attenuation, expression: D_shared_minus_D_split, meaningful_change: 0.05}
+    - {id: regression_only_attenuation, expression: D_shared_minus_D_regression_only, meaningful_change: 0.05}
+  relative_change: late_mae_divided_by_early_mae_minus_one
+  initialization_aggregation: mean_of_individual_relative_changes
+  ensemble_predictions: false
+  bootstrap_replicates: 20000
+  bootstrap_seed: 9100000
+  family_size: 9
+  familywise_alpha: 0.05
+  correction: bonferroni
+  stratified_by: condition_family
+  bootstrap_unit: complete_episode_seed
+  paired_axes: [checkpoint_update, arm, initialization_seed, policy_seed]
+  paired_across_data_splits: false
+  minimum_mae_denominator: 0.000000000001
+  zero_denominator_result: not_evaluable
+  minimum_training_relative_mae_decrease: 0.05
+  minimum_direction_agreeing_initializations: 2
+  minimum_supporting_policy_seeds: 2
+  attenuation_requires_shared_degradation: true
+  uncertainty_conditional_on_fixed_training_sets_and_initializations: true
+  claimed_power: null
+  adaptive_sample_size: false
+
+gradient_design:
+  arms: [shared, split]
+  splits: [training, confirmation_id, confirmation_shift]
+  checkpoint_updates: [0, 200, 500, 1000, 2000, 4000, 7000, 10000]
+  parameter_subset: first_two_hidden_layers
+  same_definition_as_a8d1: true
+  statistical_role: descriptive_only
+  zero_norm: preserve_row_and_mark_undefined
+  single_task_conflict: not_applicable
+  expected_episode_records: 82944
+
+expected_outputs:
+  dataset_files: 12
+  fixed_checkpoints: 288
+  selected_checkpoints: 36
+  inventory_records: 324
+  fixed_endpoint_metric_records: 1152
+  selected_metric_records: 144
+  primary_comparison_records: 9
+
+runtime_design:
+  device: cuda
+  require_cuda: true
+  resolver: src/runtime.py
+  deterministic_algorithms: true
+  formal_training_owner: user_ide
+  silent_progress_warning_seconds: 90
+  formal_hard_timeout_seconds: null
+  automatic_retry: false
+  automatic_resume: false
+  output_collision: fail
+  preserve_failure_traceback: true
+
+quick_design:
+  namespace_base: 3997000
+  split_seed_offsets: [0, 256, 512, 768]
+  condition_seed_offsets: [0, 16, 32]
+  episodes_per_condition: 2
+  policy_seeds: [9301]
+  replicate_indices: [0]
+  arms: [shared, split, regression_only, classification_only]
+  maximum_updates: 8
+  fixed_checkpoint_updates: [0, 4, 8]
+  primary_early_update: 4
+  primary_late_update: 8
+  batch_size: 32
+  log_interval_updates: 4
+  selection_interval_updates: 4
+  profile_ids: [nominal, combined_moderate]
+  probe_steps: [0, 4]
+  bootstrap_replicates: 100
+  scientific_interpretation: QUICK_SMOKE_ONLY
+
+proposed_output_paths:
+  directory: outputs/s4_r3_h16_fixed_time_confirmation_v1
+  quick_directory: outputs/s4_r3_h16_fixed_time_confirmation_v1_quick
+
+evidence_boundary:
+  experiment_type: supervised_probe_confirmation
+  original_actor_updates: 0
+  original_critic_updates: 0
+  alpha_updates: 0
+  student_updates: 0
+  full_rl_training: false
+  s4d3_access: false
+  real_slm_actions: false
+  physical_model_changed: false

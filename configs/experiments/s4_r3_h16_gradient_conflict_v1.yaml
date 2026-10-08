@@ -1,0 +1,148 @@
+metadata:
+  stage: S4-D2-R3-D2-A8-D1
+  experiment_id: AO-S4-D2-R3-D2-A8-D1-GRADIENT-CONFLICT
+  version_label: s4d2_r3_d2a8_d1_gradient_conflict_v1
+  diagnostic_only: true
+  post_hoc_mechanism_diagnostic: true
+  allow_checkpoint_loading: true
+  allow_checkpoint_gradient_read: true
+  allow_training: false
+  allow_optimizer_updates: false
+  allow_new_data_generation: false
+  allow_independent_test_access: false
+  allow_full_rl_training: false
+  allow_original_critic_updates: false
+  allow_actor_updates: false
+  allow_alpha_updates: false
+  allow_student_updates: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+design_contract:
+  plan: docs/S4-D2-R3-D2-A8-D1共享主干梯度冲突诊断计划.md
+  plan_sha256: aca8e0da8d8bd60e9db7ab11088cbd55f9d8fb555e61d866b81709d948abdb99
+  audit: docs/S4-D2-R3-D2-A8分类与收益分离输出审计记录.md
+  audit_sha256: 6b62953e41bae24b487bc1292c9ae1bc56f4db0b5f50b6ef0ed7cdc8e8d8d5cc
+
+upstream_a8:
+  summary: outputs/s4_r3_h16_head_split_v1/summary.json
+  summary_sha256: 471fd13c1e0dfebc237448dca89c1e752a85ea98524957b972072c7fe5e6ba1b
+  training_frozen: outputs/s4_r3_h16_head_split_v1/TRAINING_FROZEN.json
+  training_frozen_sha256: d1c11d7465d427d40605e6aede5c359ed656f386a5c8bb5da9ce5df6ac30e5d6
+  effective_config: outputs/s4_r3_h16_head_split_v1/effective_config.json
+  effective_config_sha256: 3ed2968897f0c762fd948e65bcfb78d001453ce2557336fe61ce2c67fafc00d6
+  preflight: outputs/s4_r3_h16_head_split_v1/preflight.json
+  preflight_sha256: a0fcd776346f76beaeb535a46708a368d6ceebaf1b17c154022a3d08a5e00632
+  recovery_manifest: outputs/s4_r3_h16_head_split_v1/RECOVERY_MANIFEST.json
+  recovery_manifest_sha256: fc9fad53525f43da40c0b0eba090257e97e41f59fb324d6e100454e618af39eb
+  recovered_success: outputs/s4_r3_h16_head_split_v1/RECOVERED_SUCCESS.json
+  recovered_success_sha256: f0f3d57f7d476bc82c8a2a0c0d491f6884b341497949fdb97bd4482d0b3ba310
+  required_interpretation_status: HEAD_SPLIT_BENEFIT_NOT_CONFIRMED
+  paired_reference_seed: 9301
+  paired_failure_seeds: [9302, 9303]
+
+design:
+  arms: [shared, split]
+  splits: [training, validation]
+  feature_size: 221
+  hidden_size: 256
+  target_horizon: 16
+  shared_parameter_prefixes: [network.0, network.2]
+  loss:
+    regression: huber
+    huber_delta: 1.0
+    classification: weighted_binary_cross_entropy
+    balanced_sign_weight: 0.25
+    positive_class_weight_source: complete_training_split
+  statistical_unit: complete_episode_seed
+  pairs_per_episode: 18
+  stratified_by: condition_id
+
+datasets:
+  9301:
+    training:
+      path: outputs/s4_r3_h16_data_scaling_v1/datasets/seed_9301_large_pairs.pt
+      sha256: b777a3d0d7060d41421872f7c51b9012fc569af9ed3638b06c77dae1100819f2
+      episodes: 384
+      pairs: 6912
+    validation:
+      path: outputs/s4_r3_h16_data_scaling_v1/datasets/seed_9301_validation_pairs.pt
+      sha256: 23d0dee3d7fdac8c86dcc7f4e58b39964b63457125db44667da1c86b316d9da3
+      episodes: 48
+      pairs: 864
+  9302:
+    training:
+      path: outputs/s4_r3_h16_data_scaling_v1/datasets/seed_9302_large_pairs.pt
+      sha256: 4d95637cef36c1efedee4153c763e47b7e21f4db2f02c3130f34d9d640d2b411
+      episodes: 384
+      pairs: 6912
+    validation:
+      path: outputs/s4_r3_h16_data_scaling_v1/datasets/seed_9302_validation_pairs.pt
+      sha256: a94e281c075c4f9cc4ba51508f17b9eb5b243bb373df0984ab9b50720ff05db3
+      episodes: 48
+      pairs: 864
+  9303:
+    training:
+      path: outputs/s4_r3_h16_data_scaling_v1/datasets/seed_9303_large_pairs.pt
+      sha256: a3e42a7158f21c09704d778e4d7e7ee3e844cb7de2a042956532fd7bf401fa9b
+      episodes: 384
+      pairs: 6912
+    validation:
+      path: outputs/s4_r3_h16_data_scaling_v1/datasets/seed_9303_validation_pairs.pt
+      sha256: f1e5cc365c1bacca8cc407979c445b309f427323d571868c829334c06e2434ae
+      episodes: 48
+      pairs: 864
+
+checkpoints:
+  9301:
+    shared:
+      path: outputs/s4_r3_h16_head_split_v1/seed_9301/shared/checkpoint_best.pt
+      sha256: fde9bdd040043a7ee77602febc7d7aab095588f251bfed7e6dd189784f954689
+    split:
+      path: outputs/s4_r3_h16_head_split_v1/seed_9301/split/checkpoint_best.pt
+      sha256: c81127b6069f7d3e63a2e34a4363b0978df4700b20352a8c66941b4b347365e1
+  9302:
+    shared:
+      path: outputs/s4_r3_h16_head_split_v1/seed_9302/shared/checkpoint_best.pt
+      sha256: cf1199b8f905d694abe35fdeb9a7240a611c103d0d317bb3b56c203acea5f0a6
+    split:
+      path: outputs/s4_r3_h16_head_split_v1/seed_9302/split/checkpoint_best.pt
+      sha256: f00c6665d50c0da086039178e4533344bff8f2d4f1e9f1a7b4d502c18245c2b5
+  9303:
+    shared:
+      path: outputs/s4_r3_h16_head_split_v1/seed_9303/shared/checkpoint_best.pt
+      sha256: 5f9e57149d7d08a362e27973435f22612250996fd8627d03386e192246dc1e70
+    split:
+      path: outputs/s4_r3_h16_head_split_v1/seed_9303/split/checkpoint_best.pt
+      sha256: c83dd4f9cac7fd6e19ff9b16a483bb9ddeee54337b9730547617104123ece498
+
+comparison:
+  bootstrap_replicates: 20000
+  bootstrap_seed: 880000
+  familywise_alpha: 0.05
+  family_size: 20
+  meaningful_cosine_difference: 0.05
+  conflict_cosine_threshold: 0.0
+  conflict_fraction_threshold: 0.50
+
+runtime:
+  device: cuda
+  require_cuda: true
+  deterministic_algorithms: true
+
+outputs:
+  directory: outputs/s4_r3_h16_gradient_conflict_v1
+  quick_directory: outputs/s4_r3_h16_gradient_conflict_v1_quick
+
+quick:
+  policy_seeds: [9301]
+  episodes_per_condition: 2
+  bootstrap_replicates: 100
+
+tracked_source_files:
+  - configs/experiments/s4_r3_h16_gradient_conflict_v1.yaml
+  - scripts/diagnose_s4_r3_h16_gradient_conflict.py
+  - src/rl/s4_r3_h16_gradient_conflict.py
+  - tests/test_s4_r3_h16_gradient_conflict.py
+  - docs/S4-D2-R3-D2-A8-D1共享主干梯度冲突诊断计划.md
+  - docs/S4-D2-R3-D2-A8分类与收益分离输出审计记录.md

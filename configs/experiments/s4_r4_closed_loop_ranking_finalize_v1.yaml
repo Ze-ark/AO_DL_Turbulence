@@ -1,0 +1,15 @@
+stage: S4-D2-R4-1B2-CLOSED-LOOP-RANKING-FINALIZE
+source_directory: outputs/s4_r4_closed_loop_ranking_v3
+output_directory: outputs/s4_r4_closed_loop_ranking_v4_finalized
+source_files:
+  outputs/s4_r4_closed_loop_ranking_v3/metrics.pt: 44149af394df2c5ec59e8e0798044478425bc6facecdc384da194a778bd1838c
+  outputs/s4_r4_closed_loop_ranking_v3/branch_manifest.json: 5a83fc17d37f7363f00edd32bc928a1d7c1894148f57f97e0d52fd1ed146319f
+  outputs/s4_r4_closed_loop_ranking_v3/progress.jsonl: 1a07cee4457388aef35484acd8a5610721ca92edfa384ddbd2944a7371f874f6
+  outputs/s4_r4_closed_loop_ranking_v3/preflight.json: 47593ef582c4b1fbf40a10996228dd95f2ba28e35649474f8030a2bac9e62c72
+  outputs/s4_r4_closed_loop_ranking_v3/config.json: 4606f5b025bb79d82a9e578ee5105d43d0c3ef073df854424a69e6c9b2a14467
+  outputs/s4_r4_closed_loop_ranking_v3/runtime.json: 68bb58e7443d9e73b33ed6eeafdd737f05642a929ce633f3a443adbb14acd188
+  outputs/s4_r4_closed_loop_ranking_v3/failure.json: c9fdea03d1e9aeb0fa58ba4228083a203526bcb336e2cfa92d8528f5c1941136
+bootstrap_seed: 3769703
+bootstrap_repeats: 20000
+disagreement: 1.0
+automatic_retry: false

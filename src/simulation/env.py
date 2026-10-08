@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import torch
 
 from src.simulation.config import S1EnvConfig
@@ -35,6 +36,7 @@ class AdaptiveOpticsEnv:
         device: torch.device | str,
         hardware_effects: HardwareEffectsConfig | None = None,
         basis_override: torch.Tensor | None = None,
+        condition_batch: list[dict] | None = None,
     ) -> None:
         config.validate()
         self.config = config
@@ -86,6 +88,20 @@ class AdaptiveOpticsEnv:
         self.requested_modal: torch.Tensor | None = None
         self.measurement_generator: torch.Generator | None = None
         self.step_count = 0
+        ideal_field = torch.fft.fftshift(
+            torch.fft.fft2(torch.fft.ifftshift(self.pupil, dim=(-2, -1)), norm="ortho"),
+            dim=(-2, -1),
+        )
+        self._ideal_intensity = ideal_field.abs().square()
+        pixel = torch.arange(config.grid_size, device=self.device, dtype=self.dtype) - config.grid_size // 2
+        py, px = torch.meshgrid(pixel, pixel, indexing="ij")
+        self._bucket_mask = torch.sqrt(px.square() + py.square()) <= config.bucket_radius_pixels
+        if condition_batch is not None:
+            if len(condition_batch) != config.batch_size:
+                raise ValueError("condition_batch length must equal config.batch_size")
+            self.condition_batch = tuple(dict(item) for item in condition_batch)
+        else:
+            self.condition_batch = None
 
     def reset(
         self,
@@ -218,6 +234,8 @@ class AdaptiveOpticsEnv:
             turbulence + ideal_correction,
             self.pupil,
             self.config.bucket_radius_pixels,
+            ideal_intensity=self._ideal_intensity,
+            bucket_mask=self._bucket_mask,
         )
 
     def oracle_disturbance_modal(self) -> torch.Tensor:
@@ -272,6 +290,25 @@ class AdaptiveOpticsEnv:
 
     def _advance_turbulence(self) -> None:
         self._require_reset()
+        if self.condition_batch is not None:
+            values = self.condition_batch
+            base_speed = torch.tensor([float(v["wind_speed_mps"]) for v in values], device=self.device, dtype=self.dtype)
+            base_direction = torch.tensor([float(v["wind_direction_deg"]) for v in values], device=self.device, dtype=self.dtype)
+            speed_fraction = torch.tensor([float(v.get("wind_speed_modulation_fraction", 0.0)) for v in values], device=self.device, dtype=self.dtype)
+            direction_mod = torch.tensor([float(v.get("wind_direction_modulation_deg", 0.0)) for v in values], device=self.device, dtype=self.dtype)
+            periods = torch.tensor([int(v.get("wind_modulation_period_frames", 0)) for v in values], device=self.device, dtype=self.dtype)
+            phases = torch.tensor([float(v.get("wind_modulation_phase_deg", 0.0)) for v in values], device=self.device, dtype=self.dtype)
+            enabled = (speed_fraction > 0) | (direction_mod > 0)
+            angle = 2 * math.pi * self.step_count / periods.clamp_min(1) + torch.deg2rad(phases)
+            wind_speed_mps = torch.where(enabled, base_speed * (1 + speed_fraction * torch.sin(angle)), base_speed)
+            wind_direction_deg = torch.where(enabled, base_direction + direction_mod * torch.cos(angle), base_direction)
+            radians = torch.deg2rad(wind_direction_deg)
+            shift_x = wind_speed_mps * self.config.dt_s * torch.cos(radians) / self.config.sample_pitch_m
+            shift_y = wind_speed_mps * self.config.dt_s * torch.sin(radians) / self.config.sample_pitch_m
+            rho = torch.tensor([float(v.get("frozen_flow_rho", 1.0)) for v in values], device=self.device, dtype=self.dtype)
+            innovation = self._new_phase_screens() if bool((rho < 1).any()) else None
+            self.turbulence_phase = advance_taylor_frozen_flow(self.turbulence_phase, shift_x, shift_y, 1.0, rho, innovation)
+            return
         wind_speed_mps, wind_direction_deg = modulated_wind_parameters(
             self.config.wind_speed_mps,
             self.config.wind_direction_deg,
@@ -308,6 +345,8 @@ class AdaptiveOpticsEnv:
             residual_phase,
             self.pupil,
             self.config.bucket_radius_pixels,
+            ideal_intensity=self._ideal_intensity,
+            bucket_mask=self._bucket_mask,
         )
 
     def _observation_and_info(self) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:

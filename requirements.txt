@@ -5,5 +5,6 @@ pyyaml
 matplotlib
 tqdm
 scikit-image
+scipy
 torch
 torchvision

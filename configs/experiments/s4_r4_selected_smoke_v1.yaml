@@ -1,0 +1,16 @@
+stage: S4-D2-R4-1B2-SELECTED-SMOKE
+device: cuda
+diagnostic_only: true
+output_directory: outputs/s4_r4_selected_smoke_v1
+parent: configs/experiments/s4_r4_dynamics_v1.yaml
+calibration: outputs/s4_r4_baseline_safety_v1/calibration.json
+profiles: [nominal, delay_3, settling_050]
+controllers: [integrator, linear_mpc, gru_mpc]
+base_seed: 3760000
+search_seed: 3769500
+batch_size: 2
+steps: 12
+physical_transitions: 216
+max_mpc_forward_samples: 1769472
+training_updates: 0
+formal_comparison_authorized: false

@@ -1,0 +1,39 @@
+# O2-B：新图像观测链的短闭环技术检查，不训练、不做收益排名。
+schema: observation_bridge_o2_closed_loop_quick_v1
+scope: cuda_synthetic_holography_closed_loop_technical_only
+device: cuda
+design_path: configs/experiments/observation_bridge_o2_design_v1.json
+design_sha256: 08da140eb29d86ada740c33e4f2edfc1719a2aeba6e58c15964bfbc6608625e9
+optics_config: configs/experiments/observation_bridge_o2_optics_v1.yaml
+optics_summary: outputs/observation_bridge_o2_optics_v1/summary.json
+optics_summary_sha256: 606c3763201b0fe1f4ce490445cc434c5412526d1bb00f854d0d9aab7247161f
+parent: configs/experiments/s4_r5_policy_training_v1.yaml
+weather_seed: 8300000
+weather_index: 0
+family_ids: [frozen, boiling, varying]
+episode_length: 32
+batch_size: 3
+controller_branches: 13
+complete_episodes: 39
+physical_transitions: 1248
+selector_start_step: 25
+policy_initializations: [0, 1, 2]
+scorer_seeds: [7564000, 7564001, 7564002]
+integrator: {gain: 0.15, leak: 0.1, tracking_gain: 0.5}
+policy_scale: 1.75
+candidate_epsilon: 0.1
+camera_noise_std: 0.0
+thresholds:
+  ideal_modal_error_max_rad: 0.001
+  replay_max_absolute_error: 1.0e-6
+  invalid_observations: 0
+  failed_or_truncated_episodes: 0
+output_directory: outputs/observation_bridge_o2_closed_loop_quick_v1
+boundary:
+  training_updates: 0
+  scientific_gain_analysis: false
+  independent_confirmation: false
+  old_confirmation_trajectory_access: false
+  real_data_access: false
+  real_slm_actions: false
+  automatic_retry: false

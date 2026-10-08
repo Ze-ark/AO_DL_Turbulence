@@ -1,0 +1,7 @@
+{
+  "src/rl/r4_action_response.py": "d14d3be31c4ccbbd2a2af45fc7999ce70f6b3eea636dd1955555161bc0aa3654",
+  "src/rl/r4_response_experiment.py": "76c8a73789ff791cbd2fecb777cce795303eabcce2ad7cc77c3e68dd48a87938",
+  "scripts/diagnose_s4_r4_action_response.py": "02931fdd5d6621994233d3da3e6c12300686f59ba8197be4f02461d0b7c96ea8",
+  "tests/test_r4_action_response.py": "6a5064063175dbaef6684ca8a82eb0e2c6d10d0231c7babeee360f3746342155",
+  "configs/experiments/s4_r4_action_response_v1.yaml": "4008fa6b82782c401895731f90797a562cd26b786b9e345f17e49cde7390a6c8"
+}

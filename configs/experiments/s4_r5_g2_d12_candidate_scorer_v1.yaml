@@ -1,0 +1,21 @@
+stage: S4-D2-R5-G2-D12-B
+purpose: offline_causal_candidate_scorer_training_only
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+dataset_config: configs/experiments/s4_r5_g2_d12_causal_dataset_v1.yaml
+split: {unit: complete_weather, folds: 4, held_out_weather_per_fold: 2}
+models: [current, history]
+training:
+  seeds: [7564000, 7564001, 7564002]
+  updates: 1000
+  batch_size: 128
+  learning_rate: 0.001
+  target_scale: 10000.0
+  gradient_clip: 1.0
+  checkpoint_interval: 250
+  display_interval: 25
+  early_stopping: false
+  checkpoint_selection: last
+quick: {seeds: [7564999], updates: 2, batch_size: 8, checkpoint_interval: 2, display_interval: 1}
+output_directory: outputs/s4_r5_g2_d12_candidate_scorer_v1
+quick_directory: outputs/s4_r5_g2_d12_candidate_scorer_v1_quick
+boundary: {confirmation_access: false, real_slm_actions: false, new_environment_transitions: 0, held_out_evaluation: false, automatic_retry: false, gate_reclassification: false}

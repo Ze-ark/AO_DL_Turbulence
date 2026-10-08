@@ -66,27 +66,33 @@ def advance_taylor_frozen_flow(
     shift_x_m: float,
     shift_y_m: float,
     sample_pitch_m: float,
-    rho: float = 1.0,
+    rho: float | torch.Tensor = 1.0,
     innovation: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """推进一帧冻结流；rho<1 时加入独立的“沸腾”相位。"""
     if sample_pitch_m <= 0:
         raise ValueError("sample_pitch_m must be positive")
-    if not 0 <= rho <= 1:
-        raise ValueError("rho must be between 0 and 1")
+    if isinstance(rho, torch.Tensor):
+        if rho.ndim not in (0, 1) or rho.device != phase.device or not bool(torch.isfinite(rho).all()) or bool((rho < 0).any()) or bool((rho > 1).any()):
+            raise ValueError("rho must be finite and between 0 and 1")
+        rho_view = rho.reshape((-1,) + (1,) * (phase.ndim - 1))
+    else:
+        if not 0 <= rho <= 1:
+            raise ValueError("rho must be between 0 and 1")
+        rho_view = rho
     translated = periodic_fourier_shift(
         phase,
         shift_x_pixels=shift_x_m / sample_pitch_m,
         shift_y_pixels=shift_y_m / sample_pitch_m,
     )
-    if rho < 1 and innovation is None:
+    if (bool((rho < 1).any()) if isinstance(rho, torch.Tensor) else rho < 1) and innovation is None:
         raise ValueError("innovation is required when rho < 1")
     if innovation is None:
         advanced = translated
     else:
         if innovation.shape != phase.shape:
             raise ValueError("innovation must have the same shape as phase")
-        advanced = rho * translated + math.sqrt(1 - rho**2) * innovation
+        advanced = rho_view * translated + torch.sqrt(torch.as_tensor(1, device=phase.device, dtype=phase.dtype) - torch.as_tensor(rho_view, device=phase.device, dtype=phase.dtype).square()) * innovation
     return advanced - advanced.mean(dim=(-2, -1), keepdim=True)
 
 

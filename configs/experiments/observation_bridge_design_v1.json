@@ -1,0 +1,302 @@
+{
+  "stage": "observation_bridge_O0",
+  "purpose": "offline_observation_interface_precheck_and_prospective_unit_plan",
+  "status": "DESIGN_ONLY_NOT_EXECUTABLE",
+  "material_passport": {
+    "origin_skill": "academic-research-suite/experiment-agent",
+    "origin_mode": "plan",
+    "origin_date": "2026-10-05",
+    "verification_status": "UNVERIFIED",
+    "version_label": "observation_bridge_design_v1"
+  },
+  "completed_prechecks": {
+    "hdf5_metadata_read_only": true,
+    "hdf5_numeric_scope": "first_frame_per_dataset_only_not_all_frame_quality",
+    "dataset_source_paths": [
+      "data/real_validation/real_offaxis_2x_validation.h5",
+      "data/real_validation/real_offaxis_2x_smoke.h5"
+    ],
+    "dataset_source_sha256": {
+      "data/real_validation/real_offaxis_2x_validation.h5": "2b1e220b702e2dfe6a78b1b199fb8192eea9d114c74ed05571aeccabc9b72ad2",
+      "data/real_validation/real_offaxis_2x_smoke.h5": "14cbb410f8be366f4a5279607068793768952fc5648df29ac18feed1c38f57ef"
+    },
+    "source_raw_png_folder_available": false,
+    "related_tests_passed": 53,
+    "related_test_elapsed_seconds": 10.59,
+    "synthetic_wrapping_diagnostic": {
+      "grid_size": 16,
+      "modal_count": 21,
+      "device": "cpu",
+      "kind": "tiny_deterministic_unit_diagnostic_not_scientific_performance",
+      "unwrapped_roundtrip_max_error_rad": 4.76837158203125e-7,
+      "naive_wrapped_projection_max_error_rad": 4.063450336456299,
+      "unwrap_algorithm_implemented": false
+    }
+  },
+  "frozen_control_contract": {
+    "archive_manifest": "configs/experiments/s4_r5_g2_c1_archive_v1.json",
+    "source": "src/rl/r4_observation.py",
+    "schema": "r4_causal_transition_v1",
+    "history_frames": 8,
+    "features_per_frame": 79,
+    "measured_residual_modes": 21,
+    "residual_unit": "rad",
+    "correction_dimensions": 11,
+    "existing_source_files_may_be_modified": false
+  },
+  "preservation_verification": {
+    "status": "BRIDGE_PRECHECK_DOCUMENT_AND_PRESERVATION_PASS",
+    "source_hdf5_hashes_unchanged": 2,
+    "frozen_c1_file_hashes_unchanged": 55,
+    "real_calibration_unknown_fields_preserved": 18,
+    "design_executable": false,
+    "bridge_implementation_completed": false,
+    "formal_training_started": false,
+    "real_slm_actions": false
+  },
+  "simulation_fixture_geometry": {
+    "grid_size": 64,
+    "pupil_radius_fraction": 0.4,
+    "modal_count": 21,
+    "basis_kind": "zernike",
+    "basis_factory": "src.rl.s4_representation_capacity.build_action_basis",
+    "axis_definition": "matrix_row_y_column_x_from_existing_basis",
+    "source": "frozen_simulation_convention_not_real_device_calibration"
+  },
+  "real_calibration": {
+    "status": "UNVERIFIED_DO_NOT_INFER_DEFAULTS",
+    "sensor_plane": null,
+    "pupil_center_pixels": null,
+    "pupil_radius_pixels": null,
+    "pixel_pitch_m": null,
+    "reference_field_or_reference_phase_path": null,
+    "wavelength_m": null,
+    "transpose_required": null,
+    "flip_x": null,
+    "flip_y": null,
+    "rotation_degrees": null,
+    "first_order_conjugation_sign": null,
+    "phase_reference_convention": null,
+    "phase_to_modal_registration_version": null,
+    "frame_interval_s": null,
+    "synchronized_command_log_path": null,
+    "synchronized_power_log_path": null,
+    "power_normalization": null,
+    "causal_crop_initialization_provenance": null
+  },
+  "unit_plan_O1": {
+    "status": "PROPOSED_NOT_IMPLEMENTED",
+    "training_updates": 0,
+    "formal_environment_transitions": 0,
+    "real_slm_actions": false,
+    "cpu_allowed_only_for_tiny_deterministic_unit_tests": true,
+    "fixture_seed": 831001,
+    "tests": [
+      "asymmetric_non_square_axis_layout_fixture",
+      "same_frozen_21_mode_basis_and_signed_unit_pulses",
+      "complex_field_phase_sign_and_conjugation",
+      "unwrapped_phase_to_modal_roundtrip",
+      "smooth_connected_wrapped_phase_roundtrip_with_known_reference",
+      "constant_phase_offset_reference_handling_without_dropping_tilt",
+      "low_intensity_or_invalid_geometry_fail_closed",
+      "history_episode_reset_and_power_timestamps_without_fake_measurements"
+    ],
+    "proposed_numeric_tolerances": {
+      "modal_roundtrip_max_absolute_error_rad": 0.00001,
+      "tolerance_scope": "controlled_noiseless_unit_fixtures_not_real_hdf5_accuracy"
+    },
+    "entry_command": null
+  },
+  "future_offaxis_simulation": {
+    "status": "NOT_IMPLEMENTED_REQUIRES_SEPARATE_DESIGN_AFTER_O1",
+    "runtime_device": "cuda",
+    "runtime_resolver": "src.runtime.resolve_device",
+    "preserve_frozen_control": true,
+    "shared_observation_for_all_controllers": true,
+    "truth_allowed_only_for_audit": true,
+    "confirmation_weather_reuse_for_tuning": false,
+    "explicit_formal_budget_required_before_run": true
+  },
+  "known_source_risks": {
+    "hdf5_has_no_actions_or_timestamps_or_power": true,
+    "crop_rect_h5py_layout": "4_by_frame",
+    "square_images_do_not_prove_axis_orientation": true,
+    "exporter_default_crop_uses_first_five_frames": true,
+    "exported_file_crop_mode_and_producer_hash_not_recorded": true,
+    "exporter_overwrites_existing_target_path": true,
+    "per_frame_normalized_intensity_is_not_power_meter_measurement": true,
+    "smoke_is_not_independent_validation": true,
+    "old_resunet_21_mode_and_real_domain_performance_unverified": true
+  },
+  "boundary": {
+    "training_allowed": false,
+    "real_slm_actions_allowed": false,
+    "frozen_confirmation_rerun_allowed": false,
+    "existing_data_overwrite_allowed": false,
+    "real_policy_rollout_allowed": false,
+    "construct_fake_command_history_allowed": false,
+    "replace_missing_power_with_image_brightness_allowed": false,
+    "alter_public_hdf5_schema": false
+  },
+  "next_minimal_task": "implement_additive_O1_synthetic_complex_field_to_21_mode_unit_adapter_without_changing_frozen_sources",
+  "source_inventory": [
+    {
+      "path": "data/real_validation/real_offaxis_2x_validation.h5",
+      "bytes": 1153768576,
+      "sha256": "2b1e220b702e2dfe6a78b1b199fb8192eea9d114c74ed05571aeccabc9b72ad2",
+      "inspection_scope": "all_dataset_metadata_and_small_metadata_arrays_first_intensity_and_phase_frame_only",
+      "data_format_modified": false,
+      "root_attrs": {
+        "description": "Real 2x off-axis hologram complex-field validation dataset",
+        "reconstruction_reference": "offaxisholo.m / compute_offaxis_temperature_series.m",
+        "source_base_folder": "E:\\加扩束镜\\2倍放大"
+      },
+      "datasets": {
+        "input/intensity_turb": {
+          "shape": [
+            2200,
+            256,
+            256
+          ],
+          "dtype": "float32"
+        },
+        "input/phase_turb": {
+          "shape": [
+            2200,
+            256,
+            256
+          ],
+          "dtype": "float32"
+        },
+        "meta/crop_rect": {
+          "shape": [
+            4,
+            2200
+          ],
+          "dtype": "int32"
+        },
+        "meta/frame_id": {
+          "shape": [
+            1,
+            2200
+          ],
+          "dtype": "int64"
+        },
+        "meta/temperature": {
+          "shape": [
+            1,
+            2200
+          ],
+          "dtype": "float32"
+        }
+      },
+      "frame_count": 2200,
+      "temperature_count": 11,
+      "frames_per_temperature": [
+        200
+      ],
+      "frame_ids_repeat_between_temperature_groups": true,
+      "groups_are_complete_control_episodes_verified": false,
+      "first_frame_checks": {
+        "input/intensity_turb": {
+          "shape": [
+            256,
+            256
+          ],
+          "finite": true,
+          "min": 0.03192095831036568,
+          "max": 150368880
+        },
+        "input/phase_turb": {
+          "shape": [
+            256,
+            256
+          ],
+          "finite": true,
+          "min": -3.141592025756836,
+          "max": 3.1414999961853027
+        }
+      },
+      "crop_rect_orientation": "4_by_frame"
+    },
+    {
+      "path": "data/real_validation/real_offaxis_2x_smoke.h5",
+      "bytes": 389524,
+      "sha256": "14cbb410f8be366f4a5279607068793768952fc5648df29ac18feed1c38f57ef",
+      "inspection_scope": "all_dataset_metadata_and_small_metadata_arrays_first_intensity_and_phase_frame_only",
+      "data_format_modified": false,
+      "root_attrs": {
+        "description": "Real 2x off-axis hologram complex-field validation dataset",
+        "reconstruction_reference": "offaxisholo.m / compute_offaxis_temperature_series.m",
+        "source_base_folder": "E:\\加扩束镜\\2倍放大"
+      },
+      "datasets": {
+        "input/intensity_turb": {
+          "shape": [
+            11,
+            64,
+            64
+          ],
+          "dtype": "float32"
+        },
+        "input/phase_turb": {
+          "shape": [
+            11,
+            64,
+            64
+          ],
+          "dtype": "float32"
+        },
+        "meta/crop_rect": {
+          "shape": [
+            4,
+            11
+          ],
+          "dtype": "int32"
+        },
+        "meta/frame_id": {
+          "shape": [
+            1,
+            11
+          ],
+          "dtype": "int64"
+        },
+        "meta/temperature": {
+          "shape": [
+            1,
+            11
+          ],
+          "dtype": "float32"
+        }
+      },
+      "frame_count": 11,
+      "temperature_count": 11,
+      "frames_per_temperature": [
+        1
+      ],
+      "frame_ids_repeat_between_temperature_groups": true,
+      "groups_are_complete_control_episodes_verified": false,
+      "first_frame_checks": {
+        "input/intensity_turb": {
+          "shape": [
+            64,
+            64
+          ],
+          "finite": true,
+          "min": 0.07886847108602524,
+          "max": 140461744
+        },
+        "input/phase_turb": {
+          "shape": [
+            64,
+            64
+          ],
+          "finite": true,
+          "min": -3.1399412155151367,
+          "max": 3.1415324211120605
+        }
+      },
+      "crop_rect_orientation": "4_by_frame"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+stage: S4-D2-R4-1B2-BASELINE-SAFETY
+device: cuda
+diagnostic_only: true
+output_directory: outputs/s4_r4_baseline_safety_v1
+upstream: outputs/s4_r4_mpc_timing_v1
+upstream_sha256: 5a22c0c6a395fa0a7022f5c99f17381d298681b7fd94de23a395bf67a02d1818
+parent: configs/experiments/s4_r4_dynamics_v1.yaml
+candidate_grid:
+  kinds: [integrator, tracking, ridge]
+  gains: [0.15, 0.25, 0.35]
+  leaks: [0.05, 0.10]
+  tracking_gain: 0.50
+  prediction_steps: 2
+  count: 18
+calibration: {source: original_training_frames_only, max_multiplier: 1.25, residual_floor: 0.02, power_floor: 0.001}
+smoke:
+  family_index: 0
+  base_seed: 3760000
+  batch_size: 2
+  profiles: [nominal, delay_3]
+  steps: 12
+  controllers: [integrator, tracking, ridge, gru_mpc]
+  gain: 0.25
+  leak: 0.10
+  search_seed: 3769400
+physical_transitions: 192
+max_mpc_forward_samples: 589824
+ridge_forward_samples: 288
+training_updates: 0
+select_baseline: false
+formal_comparison_authorized: false

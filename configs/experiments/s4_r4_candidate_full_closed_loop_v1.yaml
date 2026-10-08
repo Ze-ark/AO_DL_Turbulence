@@ -1,0 +1,25 @@
+stage: S4-D2-R4-1B2-D3-FROZEN-RESELECTION-FULL-CLOSED-LOOP
+parent: configs/experiments/s4_r4_dynamics_v1.yaml
+candidate_confirmation_output: outputs/s4_r4_candidate_confirmation_v2
+candidate_confirmation_sha256: 9ca7b17d548c2b2e37c70a7e92a38860055ec9cfade1ba16a58d7aae4aeede68
+output_directory: outputs/s4_r4_candidate_full_closed_loop_v1
+source_files:
+  outputs/s4_r4_candidate_confirmation_v2/summary.json: 9ca7b17d548c2b2e37c70a7e92a38860055ec9cfade1ba16a58d7aae4aeede68
+  outputs/s4_r4_candidate_confirmation_v2/SUCCESS.json: 4155bff852f74d3441d9d92af5dedf64b9408c8a7a52d99d86db48705fa2cf4c
+  outputs/s4_r4_candidate_confirmation_v2/artifact_manifest.json: 55bfff5a973933d967bdaf790cbd0a95d12badff20991d0656731ca6c35b7699
+  outputs/s4_r4_candidate_confirmation_v2/metrics.pt: 835ff3a30e805ffff93da0809e98b91d84c9dcec5b5b641c61c6aef86a2ab327
+controllers: [integrator, original_gru_mpc, frozen_reselection]
+candidate_order: [zero, negative, half, selected, scaled_1p5]
+frozen_threshold: 0.0032300949096679688
+formal_starts: [3790000, 3790256, 3790512]
+quick_start: 3791000
+weather_per_family: 32
+batch_episodes: 16
+steps: 200
+search_seed: 3799000
+bootstrap_seed: 3799901
+bootstrap_repeats: 20000
+physical_transitions: 345600
+max_model_forward_samples: 2844979200
+training_updates: 0
+automatic_retry: false

@@ -1,0 +1,38 @@
+stage: S4-D2-R5-G2-D8
+purpose: equal_budget_action_penalty_single_factor_ablation
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+d2_config: configs/experiments/s4_r5_g2_d2_matched_training_v1.yaml
+d2_config_sha256: 297535002d1df67e4b2ce29e8a4d749c361bcda0c94e6e199195cdb2748dc63a
+d2_entry_sha256: f747952ae9d4d736e78dba7e4168ae41e49d876fc26a86ca8a602304a96d0706
+d2_output: outputs/s4_r5_g2_d2_matched_training_v1
+d2_output_hashes:
+  summary.json: 68471420177832f2f883448a8a3ab01b87c5481773e515570aca308201d22f8e
+  losses.jsonl: a447df87d3bbcefb94726a71f8ac0126275f03cfd7c8d36f6c9c90948445ff02
+  progress.jsonl: 86d83bfd42f711b5f1c9e230a8ba7d0ff078b374f4c94cee348118765f4b33b9
+  stream_manifest.json: 6312e5ec18ba93685dd4383c3ddc3689f4297ea60c28bb3a819a97adac026f58
+  checkpoint_manifest.json: a1d5c713dd2c35599e0c397659fc07c4e2c1d6f01acce3e529d1c4517a710e5f
+  SUCCESS.json: db66743be8529b70a81dd85e9d7a0acaf27a03d90d2037e8c9a4ef62f13d9287
+d2_runtime_sha256: 7d8bf7af0f7e95eb79b12d3d0ba69f5a051948a670494bbc35a4703f23b03bea
+reference_runtime: {torch: '2.11.0+cu128', cuda: '12.8', gpu: 'NVIDIA GeForce RTX 5070 Ti Laptop GPU'}
+comparator: {id: train_scale_1_75, training_scale: 1.75, deployment_scale: 1.75, action_weight: 0.01}
+new_arm: {id: action_penalty_0, training_scale: 1.75, deployment_scale: 1.75}
+source_bundle_sha256: ccdc31faaa155361d8bd3e19ffc5bb82705f425a0ef4c7f58dd7f70831efd956
+data:
+  train_seed_base: 7000000
+  seed_stride: 3
+  paired_weather_count: 256
+  episode_length: 200
+  sensor_seed_offset: 50000000
+training:
+  initializations: 3
+  updates_per_arm_initialization: 512
+  learning_rate: 0.00003
+  gradient_norm_limit: 1.0
+  checkpoint_interval_updates: 64
+  gradient_checkpointing: false
+objective: {action_weight: 0.0, smooth_weight: 0.001, discount: 1.0}
+quick: {train_seed_base: 7510000, initializations: 1, updates_per_arm_initialization: 2, episode_length: 16}
+reserved_not_accessed: {development_seed_base: 7500000, development_weather_count: 32, confirmation_seed_base: 7600000}
+output_directory: outputs/s4_r5_g2_d8_action_penalty_zero_v1
+quick_directory: outputs/s4_r5_g2_d8_action_penalty_zero_v1_quick
+boundary: {confirmation_access: false, development_evaluation_access: false, real_slm_actions: false, automatic_retry: false, historical_results_read_only: true}

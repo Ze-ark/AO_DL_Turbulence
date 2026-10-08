@@ -1,0 +1,95 @@
+metadata:
+  stage: S4-D2-R3-D1-C
+  experiment_id: AO-S4-D2-R3-D1-C-MULTISTEP-TARGET
+  version_label: s4d2_r3_d1c_multistep_target_v1
+  purpose: locate_the_horizon_where_optimistic_target_predictions_correct_or_persist
+  hypothesis: one_step_bootstrap_optimism_persists_until_empirical_multistep_rewards_dominate_the_target_critic_bootstrap
+  user_authorized_next_stage: true
+  allow_training: false
+  allow_checkpoint_updates: false
+  allow_reward_change: false
+  allow_algorithm_change: false
+  allow_gate_relaxation: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+upstream_d1b:
+  summary: outputs/s4_r3_critic_source_v1/summary.json
+  summary_sha256: adb84813578e3c03fc1cda350afe4eeaa247bac9c918e1459e9191fca47a678e
+  preflight: outputs/s4_r3_critic_source_v1/preflight.json
+  preflight_sha256: 81b166761ca570d837b1e51cd520bcc1749c851150049a15892393ea8f36a84f
+  effective_config: outputs/s4_r3_critic_source_v1/effective_config.json
+  effective_config_sha256: f048b43f313d6804485d2bc690f062cf3f2c0a85ad99357de3efa298df6ac4b1
+  source_manifest: outputs/s4_r3_critic_source_v1/source_manifest.json
+  source_manifest_sha256: ca9710ff8b798e88ee7f4480dcb4dbff85e056536a17655ec7101e3723530e05
+  probe_records: outputs/s4_r3_critic_source_v1/probe_records.csv
+  probe_records_sha256: c2bbcc1b2880a7b7723c565ed74249b494a192d747aa7dd5e4052655b9be3613
+  episode_records: outputs/s4_r3_critic_source_v1/episode_records.csv
+  episode_records_sha256: cedb73e2e2305ad3a909b4ece29d1343fedfbbb7b86ee24ebd3ddde38fc10e34
+  history_checkpoint_manifest: outputs/s4_r3_critic_source_v1/history_checkpoint_manifest.json
+  history_checkpoint_manifest_sha256: fe8d721d8048980586beaf1f03adc7b2da54d6c084ebaff8a28991785d89d6d9
+  experiment_config: configs/experiments/s4_r3_critic_source_v1.yaml
+  experiment_config_sha256: 9c46f8d91f12e55354384c0c24c6542e88e793da6a17fd7a8909259dde644d5b
+  audit_record: docs/S4-D2-R3-D1-B评论家误差来源定位审计记录.md
+  audit_record_sha256: 5acbd53c1d1d0a11749013dc9e92c4dd03faabd5beff4f2eb448e15d3760abe6
+  required_interpretation_status: SOFT_BELLMAN_MISFIT_CONFIRMED
+  required_probe_rows: 1620
+  required_episode_rows: 12960
+
+candidate_actions:
+  - {id: zero, kind: actor_scale, scale: 0.0}
+  - {id: actor, kind: actor_scale, scale: 1.0}
+
+diagnostic:
+  episode_length_steps: 200
+  horizons: [1, 2, 4, 8, 16, 32]
+  continuation_policy: deterministic_frozen_actor
+  bootstrap_policy: deterministic_frozen_actor
+  bootstrap_critic: frozen_target_minimum
+  reward_accumulator_dtype: float64
+  common_prefix_policy: frozen_student_only
+  reuse_exact_d1a_d1b_physical_seeds: true
+
+alignment:
+  tolerance: 0.000005
+  require_d1b_q_reward_target_h1: true
+  require_d1a_reward_power_h32: true
+
+quick:
+  checkpoint_arms: [student_backbone, random_backbone]
+  policy_seeds: [9301]
+  profile_ids: [nominal]
+  episodes_per_condition: 2
+  probe_steps: [0, 8]
+  horizons: [1, 2, 4]
+  diagnostic_conditions:
+    - id: r3d1c_quick
+      regime: boiling_stationary_wind
+      base_seed: 3897000
+      wind_speed_mps: 0.575
+      wind_direction_deg: 62.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+
+outputs:
+  directory: outputs/s4_r3_multistep_target_v1
+  quick_directory: outputs/s4_r3_multistep_target_v1_quick
+
+tracked_source_files:
+  - scripts/diagnose_s4_r3_multistep_target.py
+  - src/runtime.py
+  - src/training_progress.py
+  - src/rl/s4_r3_multistep_target_diagnostic.py
+  - src/rl/s4_r3_critic_source_diagnostic.py
+  - src/rl/s4_r3_critic_calibration.py
+  - src/rl/s4_r3_failure_diagnostic.py
+  - src/rl/s4_r3_student_anchored_sac.py
+  - src/rl/student_anchored_control.py
+  - src/rl/residual_control.py
+  - src/rl/residual_sac.py
+  - src/rl/s4_training.py
+  - src/simulation/config.py
+  - src/simulation/env.py
+  - src/simulation/hardware_effects.py
+  - src/simulation/robust_control.py
+  - src/simulation/turbulence.py

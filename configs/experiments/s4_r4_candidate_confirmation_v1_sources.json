@@ -1,0 +1,15 @@
+{
+  "src/rl/r4_candidate_confirmation.py": "cc43c9936d02f33be98ca28b19748aee132f0c9ebc511376c81165d6250283ee",
+  "scripts/confirm_s4_r4_candidate_reselection.py": "2ef9548052f0eb51159096ed6de577e71675fe79184e4f994043ef74d2a6156f",
+  "configs/experiments/s4_r4_candidate_confirmation_v1.yaml": "6451fc9a085b7a5fcb1d3107e0f4d4c74dba08043fae26153b31afd1a714508c",
+  "tests/test_r4_candidate_confirmation.py": "70f1cd662eb2cce678d2e172653a8f68644de57d04f3fa608d1aaa75fcd962f5",
+  "docs/S4-D2-R4-1B2-D2候选动作独立确认计划.md": "31de1cdf5f67b874d027ae48c18ec9cca7bb07062a9744b714a534c37952341a",
+  "src/rl/r4_candidate_reselection.py": "6683b7d1e020f160bc680b933167e9b14fcb2f86954c15781dd5c55782e25b1d",
+  "src/rl/r4_closed_loop_ranking.py": "77505eeb15507fa34512fb61971c93adc7d64ca558299830acbf45b337d5ea24",
+  "src/rl/r4_action_response.py": "d14d3be31c4ccbbd2a2af45fc7999ce70f6b3eea636dd1955555161bc0aa3654",
+  "src/rl/r4_baselines.py": "b4c9b05516122b3aa0e587911092608b4de46fcc3e3cfd5ba6cd4029e799e1d4",
+  "src/rl/r4_closed_loop.py": "8701b055c68055d8ac71b24ada1f2267fb44d374d82fba4be1483e8173846633",
+  "src/rl/r4_selected_anchor.py": "f2990712fdbff9435cde04625792d86172631bce95ff9d14233b97e3cd3612fe",
+  "src/rl/r4_mpc.py": "9625b25f2dc2c4951cc2ffc4ef7326e59e60e7ef3626e0de5ca908e13f1abafb",
+  "configs/experiments/s4_r4_dynamics_v1.yaml": "91572e2b1ab41769bf7ec758b2a483d229f475a04977be5a5b8598f48ba49d54"
+}

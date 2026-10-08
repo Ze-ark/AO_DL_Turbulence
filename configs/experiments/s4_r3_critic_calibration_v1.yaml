@@ -1,0 +1,137 @@
+metadata:
+  stage: S4-D2-R3-D1-A
+  purpose: frozen_critic_deployment_ranking_calibration_and_reward_decomposition
+  hypothesis: critic_action_ranking_or_reward_penalty_can_explain_the_negative_rl_increment
+  user_authorized_next_stage: true
+  allow_training: false
+  allow_checkpoint_updates: false
+  allow_reward_change: false
+  allow_algorithm_change: false
+  allow_gate_relaxation: false
+  allow_s4d3_access: false
+  allow_real_hardware_actions: false
+
+upstream_d1:
+  summary: outputs/s4_r3_failure_diagnostic_v1/summary.json
+  summary_sha256: 73c1dda96e1c75dfa20092d912d7c846deab4b42b8defeb26a57e0ce424de296
+  preflight: outputs/s4_r3_failure_diagnostic_v1/preflight.json
+  preflight_sha256: e37b76f6529468ae3c9c87fb4ece18561d4b91440fcd7201e0c2ba268ce8e403
+  effective_config: outputs/s4_r3_failure_diagnostic_v1/effective_config.json
+  effective_config_sha256: 77b0533a56a81438e64333ba9b90f8e60a9cd7feefec7e4cf9e850da05a10e87
+  source_manifest: outputs/s4_r3_failure_diagnostic_v1/source_manifest.json
+  source_manifest_sha256: 18a7b46dbddd3d3299662811dccbaafb2077bde7bade8a0c0cb6fae125b2fa9e
+  scenario_records: outputs/s4_r3_failure_diagnostic_v1/scenario_records.csv
+  scenario_records_sha256: f5ac6f3c5a870251dfb94f066d78d0f845e9e1516e7b174e106b5a0c8460000c
+  episode_records: outputs/s4_r3_failure_diagnostic_v1/episode_records.csv
+  episode_records_sha256: ac76b050b22215913979f2b1ec62c04f9e299af6e0ddb50243634a90d3654e0f
+  experiment_config: configs/experiments/s4_r3_failure_diagnostic_v1.yaml
+  experiment_config_sha256: 5ddb6949c0a2be40e48a753ad7c835636178e21b6a3bdc6f1f3022e563b3f346
+  required_status: completed_pending_independent_audit
+  required_interpretation_status: MIXED_FAILURE_MECHANISMS
+  required_zero_alignment_pass: true
+  required_scenario_rows: 648
+  required_episode_rows: 10368
+
+candidate_actions:
+  - {id: reverse_actor, kind: actor_scale, scale: -1.0}
+  - {id: zero, kind: actor_scale, scale: 0.0}
+  - {id: quarter_actor, kind: actor_scale, scale: 0.25}
+  - {id: actor, kind: actor_scale, scale: 1.0}
+  - {id: ideal_teacher, kind: ideal_teacher}
+
+profile_ids:
+  - nominal
+  - delay_3
+  - settling_050
+  - registration_moderate
+  - registration_severe
+  - combined_moderate
+
+diagnostic_conditions:
+  - id: r3d1a_frozen
+    regime: frozen_stationary
+    base_seed: 3800000
+    wind_speed_mps: 0.55
+    wind_direction_deg: 35.0
+    slm_delay_frames: 2
+  - id: r3d1a_boiling
+    regime: boiling_stationary_wind
+    base_seed: 3810000
+    wind_speed_mps: 0.65
+    wind_direction_deg: 55.0
+    frozen_flow_rho: 0.995
+    slm_delay_frames: 2
+  - id: r3d1a_combined
+    regime: boiling_varying_wind_noisy
+    base_seed: 3820000
+    wind_speed_mps: 0.525
+    wind_direction_deg: 95.0
+    frozen_flow_rho: 0.995
+    wind_speed_modulation_fraction: 0.15
+    wind_direction_modulation_deg: 15.0
+    wind_modulation_period_frames: 80
+    wind_modulation_phase_deg: 315.0
+    slm_delay_frames: 2
+
+diagnostic:
+  episodes_per_condition: 8
+  probe_steps: [0, 80, 160]
+  return_horizon_steps: 32
+  continuation_policy: deterministic_frozen_actor
+  common_prefix_policy: frozen_student_only
+  gamma_source: frozen_checkpoint
+  compare_on_identical_episode_seeds: true
+  persist_per_episode_records: true
+
+interpretation_thresholds:
+  positive_ci_low: 0.0
+  negative_ci_high: 0.0
+  maximum_rank_accuracy_for_failure: 0.50
+  maximum_top_action_agreement_for_failure: 0.50
+  decomposition_tolerance: 0.000005
+
+protected_seed_ranges:
+  - {id: all_prior_training_validation_and_diagnostics, start_inclusive: 0, end_exclusive: 3800000}
+  - {id: sealed_s4d3, start_inclusive: 4000000, end_exclusive: 5000000}
+
+quick:
+  checkpoint_arms: [student_backbone, random_backbone]
+  policy_seeds: [9301]
+  profile_ids: [nominal]
+  episodes_per_condition: 2
+  probe_steps: [0, 8]
+  return_horizon_steps: 8
+  diagnostic_conditions:
+    - id: r3d1a_quick
+      regime: boiling_stationary_wind
+      base_seed: 3899000
+      wind_speed_mps: 0.575
+      wind_direction_deg: 62.0
+      frozen_flow_rho: 0.995
+      slm_delay_frames: 2
+
+outputs:
+  directory: outputs/s4_r3_critic_calibration_v1
+  quick_directory: outputs/s4_r3_critic_calibration_v1_quick
+
+tracked_source_files:
+  - scripts/diagnose_s4_r3_critic_calibration.py
+  - src/runtime.py
+  - src/training_progress.py
+  - src/rl/s4_r3_critic_calibration.py
+  - src/rl/s4_r3_failure_diagnostic.py
+  - src/rl/s4_r3_student_anchored_sac.py
+  - src/rl/student_anchored_control.py
+  - src/rl/residual_control.py
+  - src/rl/residual_sac.py
+  - src/rl/s4_closed_loop_shift.py
+  - src/rl/s4_high_order_learnability.py
+  - src/rl/s4_representation_capacity.py
+  - src/rl/s4_training.py
+  - src/simulation/config.py
+  - src/simulation/controllers.py
+  - src/simulation/env.py
+  - src/simulation/hardware_effects.py
+  - src/simulation/modes.py
+  - src/simulation/robust_control.py
+  - src/simulation/turbulence.py

@@ -1,0 +1,25 @@
+stage: S4-D2-R5-G2-D3
+purpose: fresh_weather_equal_deployment_paired_closed_loop_development
+runtime: {device: cuda, formal_owner: user_ide, automatic_retry: false}
+training_config: configs/experiments/s4_r5_g2_d2_matched_training_v1.yaml
+training_config_sha256: 297535002d1df67e4b2ce29e8a4d749c361bcda0c94e6e199195cdb2748dc63a
+training_entry_sha256: f747952ae9d4d736e78dba7e4168ae41e49d876fc26a86ca8a602304a96d0706
+training_output: outputs/s4_r5_g2_d2_matched_training_v1
+training_output_hashes:
+  summary.json: 68471420177832f2f883448a8a3ab01b87c5481773e515570aca308201d22f8e
+  losses.jsonl: a447df87d3bbcefb94726a71f8ac0126275f03cfd7c8d36f6c9c90948445ff02
+  progress.jsonl: 86d83bfd42f711b5f1c9e230a8ba7d0ff078b374f4c94cee348118765f4b33b9
+  stream_manifest.json: 6312e5ec18ba93685dd4383c3ddc3689f4297ea60c28bb3a819a97adac026f58
+  checkpoint_manifest.json: a1d5c713dd2c35599e0c397659fc07c4e2c1d6f01acce3e529d1c4517a710e5f
+  SUCCESS.json: db66743be8529b70a81dd85e9d7a0acaf27a03d90d2037e8c9a4ef62f13d9287
+source_bundle_sha256: ccdc31faaa155361d8bd3e19ffc5bb82705f425a0ef4c7f58dd7f70831efd956
+controller_ids: [integrator, original_0, original_1, original_2, train_scale_1_0, train_scale_1_1, train_scale_1_2, train_scale_1_75_0, train_scale_1_75_1, train_scale_1_75_2]
+deployment_scale: 1.75
+hardware_conditions: [nominal_clone, hardware_shift]
+data: {seed_base: 7100000, seed_stride: 10, weather_count: 32, episode_length: 200}
+quick: {seed_base: 7110000, weather_count: 1, episode_length: 16}
+statistics: {bootstrap_seed: 7123456, bootstrap_repeats: 5000, primary_interval_per_condition: 0.975}
+thresholds: {minimum_relative_gain: 0.0105, maximum_safety_increase: 0.001}
+output_directory: outputs/s4_r5_g2_d3_matched_development_v1
+quick_directory: outputs/s4_r5_g2_d3_matched_development_v1_quick
+boundary: {confirmation_access: false, training_updates: 0, real_slm_actions: false, automatic_retry: false, historical_results_read_only: true}
